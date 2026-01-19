@@ -7,9 +7,9 @@
     <title>Document</title>
 </head>
 <body>
-    <h1>Map Page</h1>
+    <h1 id="titleThingy"></h1>
     <img alt="MapImage" id="mappy">
-    
+    <h4 id="widthy"></h4>
 </body>
 <script>
     const logging = require('./common/logging.js');
@@ -17,16 +17,15 @@
     const unitTest = require('./common/unitTest.js');
     const pathDep = require('./common/pathDep.js');
 
+    
+    document.getElementById("mappy").src = pathDep.fromHereToRoot(__dirname) + "/src/media/temppic.png";
+    document.getElementById("titleThingy").textContent = "HTML parent folder: " + pathDep.getCurrentFolderName(__dirname);
     logging.log("Map page loaded");
+    
+    console.log(document.getElementById("widthy").textContent = "Width: "+screen.width);
+    console.log(document.getElementById("widthy").textContent = "Height: "+screen.height);
 
-    // Example usage:
-    // unitTest.performUnitTest(someResult, expected);
-    // let timestamp = timendate.getTimestamp(timendate.format);
-    // console.log(timestamp);
-    // let folderName = pathDep.getCurrentFolderName();
-    // logging.log(folderName);
-
-    //document.getElementById("mappy").src = pathDep.fromHereToRoot(__dirname) + "assets/map.png";
+    
     
 </script>
 </html>
