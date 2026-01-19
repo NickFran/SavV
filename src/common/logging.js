@@ -1,13 +1,12 @@
-
+const { getTimestamp, format } = require('./timendate.js');
 
 function startLog() {
-    Timestamp = Date.now(); // this is wrong but it can stay temp.
-    // save data to file
+    let timestamp = getTimestamp(format)   
 }
 
 function log(msg) {
-    Timestamp = Date.now(); // this is wrong but it can stay temp.
-    console.log(msg)
+    let timestamp = getTimestamp(format)
+    console.log(`${timestamp} | ${msg}`)
     // save data to file (Timestamp + | + msg)
 }
 
@@ -15,9 +14,12 @@ function DisplayError(ErrorName, msg, ErrorLevel, IgnoreLogging) {
     if (IgnoreLogging) {
         // code to display on screen by manipulating the DOM
     } else {
-        log(`${ErrorName} [${ErrorLevel}] |  ${msg}`) 
+        log(`${ErrorName} [${ErrorLevel}] | ${msg}`) 
         // code to display on screen by manipulating the DOM
     }
 }
 
-DisplayError("NotFoundError", "Cant find this thing", 2, false)
+
+
+
+module.exports = { log, DisplayError };

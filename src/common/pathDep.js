@@ -1,7 +1,6 @@
-const { get } = require('http');
-const path = require('path'); 
-const unitTests = require('./unitTest.js')
-//const { app } = require('electron'); 
+const path = require('node:path');
+const { performUnitTest } = require('./unitTest.js');
+const { DisplayError } = require('./logging.js');
 
 
 // Takes folder names and converts to hardset ints of the number of sublevels from root.
@@ -30,15 +29,15 @@ function getCurrentFolderPath(dirname) {
 // Expects Folder as input, uses it to find its corresponding sublevel.
 function fromHereToRoot(dirname) {
     // One of these per level from root
-    localPathObject = '..'
+    let localPathObject = '..'
 
     // use both our functions to locally store the bame and path of the folder.
-    folderName = getCurrentFolderName(dirname);
-    folderPath = getCurrentFolderPath(dirname);
+    let folderName = getCurrentFolderName(dirname);
+    let folderPath = getCurrentFolderPath(dirname);
 
     // take the pathObject, and repeat it i times, where i is the value that the folder name maps to in the folderSublevelFromRootMap 
     // (its a string of n amounts of .., match will array it into groups of two using RE.
-    builtDotsArray = localPathObject.repeat(folderSublevelFromRootMap[folderName]).match(/.{1,2}/g);
+    let builtDotsArray = localPathObject.repeat(folderSublevelFromRootMap[folderName]).match(/.{1,2}/g);
 
     // as long as the folder name is in the map, return our new map using the current full path and appending on to it the proper number of ".."'s
     if (folderName in folderSublevelFromRootMap) {
@@ -53,7 +52,7 @@ function resolveToProperDataPath(dirname, folderName) {
     // Electron Method to check dev/prod status of the app
     //const isDev = !app.isPackaged; 
 
-    isSpecifiedFolderValid = (folderName == "logs" || folderName == "savedData")
+    let isSpecifiedFolderValid = (folderName == "logs" || folderName == "savedData")
 
     if (isSpecifiedFolderValid) { 
         return true //isDev 
@@ -68,36 +67,36 @@ function resolveToProperDataPath(dirname, folderName) {
 } 
 
 // UNIT TESTS
-unitTests.performUnitTest(
-    getCurrentFolderName(__dirname), 
-    String.raw`common`
-);
+// performUnitTest(
+//     getCurrentFolderName(__dirname), 
+//     String.raw`common`
+// );
 
-unitTests.performUnitTest(
-    getCurrentFolderPath(__dirname), 
-    String.raw`D:\Repository\SavV\src\common`
-);
+// performUnitTest(
+//     getCurrentFolderPath(__dirname), 
+//     String.raw`D:\Repository\SavV\src\common`
+// );
 
-unitTests.performUnitTest(
-    path.join(fromHereToRoot(__dirname)), 
-    String.raw`D:\Repository\SavV`
-);
+// performUnitTest(
+//     path.join(fromHereToRoot(__dirname)), 
+//     String.raw`D:\Repository\SavV`
+// );
 
-unitTests.performUnitTest(
-    path.join(fromHereToRoot(__dirname), "dist", "savedData"), 
-    String.raw`D:\Repository\SavV\dist\savedData`
-);
+// performUnitTest(
+//     path.join(fromHereToRoot(__dirname), "dist", "savedData"), 
+//     String.raw`D:\Repository\SavV\dist\savedData`
+// );
 
-unitTests.performUnitTest(
-    resolveToProperDataPath(__dirname, "logs"), 
-    String.raw`D:\Repository\SavV\logs`
-);
+// performUnitTest(
+//     resolveToProperDataPath(__dirname, "logs"), 
+//     String.raw`D:\Repository\SavV\logs`
+// );
 
-unitTests.performUnitTest(
-    resolveToProperDataPath(__dirname, "savedData"), 
-    String.raw`D:\Repository\SavV\savedData`
-);
+// performUnitTest(
+//     resolveToProperDataPath(__dirname, "savedData"), 
+//     String.raw`D:\Repository\SavV\savedData`
+// );
 
 
 
-//module.exports = { getSavedDataPath };
+module.exports = { getCurrentFolderName, getCurrentFolderPath, fromHereToRoot, resolveToProperDataPath };
