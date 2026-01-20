@@ -7,23 +7,54 @@
     <title>Document</title>
 </head>
 <body>
-    <h1 id="titleThingy"></h1>
-    <img alt="MapImage" id="mappy">
-    <h4 id="widthy"></h4>
+    <div class="minibanner" id="minibanner">
+        <div class="wrapper">
+            <button class="mapModeButton" id="mapModeButton">Map</button>
+            <button class="viewModeButton" id="viewModeButton">Views</button>
+        </div>
+    </div>
+
+    <div class="banner" id="banner">
+        <div class="wrapper">   
+            <button href="#" class="bannerButton" id="bannerButton1">icon</button>
+            <button href="#" class="bannerButton" id="bannerButton2">icon</button>
+            <button href="#" class="bannerButton" id="bannerButton3">icon</button>
+            <button href="#" class="bannerButton" id="bannerButton4">O</button>
+        </div>
+    </div>
+
+    <div class="sidebar" id="sidebar"> 
+        <p>datasets</p>
+    </div>
+
+    <div class="main" id="main">
+        <div class="mapPage">        
+            <div class="card"><p>glider settings</p></div>
+            <div class="card"><p>more glider settings</p></div>
+            <div class="card"><p>map markers</p></div>
+            <div class="card"><p>map</p></div>
+        </div>
+        <div class="viewPage">        
+            <div class="card"></div>
+            <div class="card"></div>
+            <div class="card"></div>
+            <div class="card"></div>
+        </div>
+    </div>
 </body>
 <script>
-    const logging = require('./common/logging.js');
-    const timendate = require('./common/timendate.js');
-    const unitTest = require('./common/unitTest.js');
-    const pathDep = require('./common/pathDep.js');
+    // const logging = require('./common/logging.js');
+    // const timendate = require('./common/timendate.js');
+    // const unitTest = require('./common/unitTest.js');
+    // const pathDep = require('./common/pathDep.js');
 
     
-    document.getElementById("mappy").src = pathDep.fromHereToRoot(__dirname) + "/src/media/temppic.png";
-    document.getElementById("titleThingy").textContent = "HTML parent folder: " + pathDep.getCurrentFolderName(__dirname);
-    logging.log("Map page loaded");
+    // document.getElementById("mappy").src = pathDep.fromHereToRoot(__dirname) + "/src/media/temppic.png";
+    // document.getElementById("titleThingy").textContent = "HTML parent folder: " + pathDep.getCurrentFolderName(__dirname);
+    // logging.log("Map page loaded");
     
-    console.log(document.getElementById("widthy").textContent = "Width: "+screen.width);
-    console.log(document.getElementById("widthy").textContent = "Height: "+screen.height);
+    // console.log(document.getElementById("widthy").textContent = "Width: "+screen.width);
+    // console.log(document.getElementById("widthy").textContent = "Height: "+screen.height);
 
     
     
