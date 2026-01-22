@@ -1,9 +1,10 @@
 class DataFile {
-    constructor(fileName, fileExtension, filePath, fileSize) {
-        this.fileName = fileName;
-        this.fileExtension = fileExtension;
-        this.filePath = filePath;
-        this.fileSize = fileSize;
+    constructor(params = {}) {
+        this.fileName = params.fileName;
+        this.fileExtension = params.fileExtension;
+        this.filePath = params.filePath;
+        this.fileSize = params.fileSize;
+
         this.data = null
     }
 
@@ -38,15 +39,35 @@ class DataFile {
 }
 
 class DataView {
-    constructor(graphType) {
-        this.graphType = graphType;
+    constructor(params = {}) {
+        this.graphType = params.graphType;
+        this.isStored = params.isStored;
         //?
+        
+        //Generate UUID for Data
+        if (params.isStored) {
+            this.uuid = params.uuid;
+        } else {
+            this.uuid = crypto.randomUUID();
+        }
+    }
+
+    saveToJSON() {
+        // save contents to JSON to store for later loading
+        
+        // one option is to return a struct of its data, which JS can then save in a JSON file.
+    }
+}
+
+class ViewSettings {
+    constructor(params = {}) {
+
     }
 }
 
 // this needs to be fleshed out, but you get the point
 const dataViewAxisSetting = {
-    axis : "X",
+    axis : "x",
     MappedDataFileVariable : "Salinity",
     minRange: 0,
     maxRange: 100
@@ -67,7 +88,13 @@ console.log(dataViewSettings);
 
 
 
-const df = new DataFile('dataTest', '.nc', 'C:/', '194053');
+const df = new DataFile(
+    {
+        fileName: "dataTest",
+        fileExtension: ".nc",
+        filePath: "C:/",
+        fileSize: 194053        
+    });
 
 df.addData();
 df.removeData();
