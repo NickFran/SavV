@@ -7,6 +7,11 @@ const BrowserWindow = electron.BrowserWindow;
 const path = require('path');
 const url = require('url');
 
+// more secure
+// electron.ipcMain.handle("test-thing", async (_, msg) => {
+//     console.log(`Test Message ${msg}`)
+// })
+
 let win;
 
 function createWindow() {
@@ -14,7 +19,8 @@ function createWindow() {
         width: 1920, height: 1080,
         webPreferences: {
             nodeIntegration: true,
-            contextIsolation: false
+            contextIsolation: false,
+            preload: path.join(__dirname, "common", "preload.js")
         }
     });
     win.loadURL(url.format({

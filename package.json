@@ -2,11 +2,9 @@
   "name": "my-electron-app",
   "version": "1.0.0",
   "main": "./src/main.js",
-
   "scripts": {
     "start": "electron ."
   },
-
   "devDependencies": {
     "electron": "^40.0.0"
   }
