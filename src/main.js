@@ -24,7 +24,7 @@ function createWindow() {
         }
     });
     win.loadURL(url.format({
-        pathname: path.join(__dirname, 'map.html'),
+        pathname: path.join(__dirname, 'unitTests', 'test.html'),
         protocol: 'file:',
         slashes: true
     }));

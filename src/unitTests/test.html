@@ -13,15 +13,25 @@
 </body>
 <style>
     .main, #main {
-        width: 800px;
-        height: 600px;
+        width: 600px;
+        height: 400px;
     }
     #main2 {
-        width: 800px;
-        height: 600px;
+        width: 600px;
+        height: 400px;
     }
 </style>
 <script type="module">
+
+    const integrations = require('../common/integrations.js');
+    
+    integrations.callPyFunc('getDataFile', ['10', 'GL_PR_PF_1902604.nc']).then(result => {
+        let x = result;
+        console.log("Result from Python function:", x);
+    }).catch(error => {
+        console.error("Error:", error);
+    });
+
     // use an ESM build via CDN (or a relative ./node_modules path served by your dev server)
     import * as echarts from 'https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.esm.js';
 

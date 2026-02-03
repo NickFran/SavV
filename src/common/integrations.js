@@ -7,7 +7,9 @@ function callPyFunc(funcName, args) {
         const pythonPath = path.join(fromHereToRoot(__dirname), 'src', 'common', 'pythonTest.py');
         execFile('python', [pythonPath, funcName, ...args], 
             (error, stdout, stderr) => {
-                if (error) reject(error);
+                if (error) {
+                    reject(error);
+                }
                 else resolve(JSON.parse(stdout));
             }
         );
