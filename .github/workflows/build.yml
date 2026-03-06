@@ -74,10 +74,11 @@ jobs:
       - name: Install dependencies
         run: npm install
       
-      - name: Setup Python environments
+      - name: Fix Python package compatibility
         run: |
-          chmod +x setup-mac-python.sh
-          ./setup-mac-python.sh
+          echo "Installing Python packages from requirements.txt..."
+          PythonPortableMac_arm64/python/bin/python3.10 -m pip install -r requirements.txt
+          PythonPortableMac_x64/python/bin/python3.10 -m pip install -r requirements.txt
       
       - name: Build macOS
         run: npm run build:mac
