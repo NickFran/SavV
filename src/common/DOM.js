@@ -297,6 +297,15 @@ function showLoadingScreen() {
     loadingOverlay.style.display = 'flex';
     loadingOverlay.style.opacity = '1';
 }
+
+/**
+ * Updates the loading screen text to show current progress.
+ * @param {string} text - The text to display on the loading screen.
+ */
+function setLoadingText(text) {
+    const loadingText = document.getElementById('loadingText');
+    if (loadingText) loadingText.textContent = text;
+}
 /**
  * Functions to show and hide the loading screen overlay. The showLoadingScreen function makes the overlay visible and fully opaque, while the hideLoadingScreen function fades it out and then hides it after the fade-out animation completes.
  * These functions can be called before and after long-running operations (like loading a dataset) to provide visual feedback to the user that something is happening.
@@ -306,6 +315,9 @@ function hideLoadingScreen() {
     loadingOverlay.style.opacity = '0';
     setTimeout(function() {
         loadingOverlay.style.display = 'none';
+        // Reset loading text back to default
+        const loadingText = document.getElementById('loadingText');
+        if (loadingText) loadingText.textContent = 'Loading...';
     }, 300); // Wait for fade out animation
 }
 
@@ -475,6 +487,7 @@ module.exports = {
     dom_clearElementInnerHTML_UsingObject,
     showLoadingScreen,
     hideLoadingScreen,
+    setLoadingText,
     displayDatasetInfo,
     leaf_insertDataMarker,
     leaf_buildPopupContent,

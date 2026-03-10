@@ -303,7 +303,7 @@ async function saveDatasetToJSON(dep, fileName, overview) {
             await fs.promises.writeFile(jsonPath, JSON.stringify(existingJSONData, null, 2));
             reparseSimpleData(); // Update in-memory data after writing to file
             console.log("Data saved to simpleData.json");
-            DOM.hideLoadingScreen(); // Hide loading screen after data is saved
+            //DOM.hideLoadingScreen(); // Hide loading screen after data is saved
 
         } catch (error) {
             console.error("Error saving to simpleData.json:", error);
