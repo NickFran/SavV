@@ -254,36 +254,66 @@
     }
 
     document.getElementById("DeleteFileButton").addEventListener("click", async function() {
-        let currentTargetFile = Array.from(appState.selectedFiles)[0];
-        console.log("Delete button clicked= " + currentTargetFile);
+        const filesToDelete = Array.from(appState.selectedFiles);
+        if (filesToDelete.length === 0) return;
         
-        // Close the dataset in Python before deleting the file
-        try {
-            await integrations.callPyFunc('close');
-            console.log("Dataset closed in Python");
-        } catch (error) {
-            console.error("Error closing dataset:", error);
-        }
+        console.log(`Delete button clicked, ${filesToDelete.length} file(s) selected`);
         
-        // Remove from UI and data
-        DOM.leaf_removeMapMarker(appState, currentTargetFile);
-        DOM.dom_removeSidebarEntry(currentTargetFile);
-        fileHandle.deleteEntryInSimpleData(currentTargetFile);
-        fileHandle.deleteDataFile(currentTargetFile);
-        appState.selectedFiles.delete(currentTargetFile);
+        // Add all selected files to the remove queue
+        fileHandle.addToRemoveQeue(filesToDelete);
+        console.log(`Remove queue populated with ${filesToDelete.length} file(s)`);
+        
+        DOM.showLoadingScreen();
+        
+        // Process the remove queue sequentially
+        await processRemoveQeue();
         
         // Update allFiles list
         appState.allFiles = fileHandle.listSavedDataFiles(
             pathDep.resolveToProperDataPath(__dirname, 'savedData'), 
             '.nc'
         );
-        console.log('File deleted and state updated');
+        console.log('All queued deletions complete');
 
         DOM.dom_clearElementInnerHTML_UsingString("datasetInfoCardWrapper");
         DOM.dom_clearElementInnerHTML_UsingString('datasetAttrCardWrapper');
         DOM.dom_clearElementInnerHTML_UsingString('datasetVarsCardWrapper');
         DOM.dom_SetElementInnerHTML_UsingString("dataFileHeader", "(Click on a data file to view)");
+        DOM.hideLoadingScreen();
     });
+
+    /**
+     * Reads the remove queue file and processes each entry one-by-one.
+     * For each entry: closes dataset in Python, removes marker, sidebar entry, simpleData entry, and data file.
+     */
+    async function processRemoveQeue() {
+        const queue = fileHandle.readRemoveQeue();
+        
+        for (let i = 0; i < queue.length; i++) {
+            const entry = queue[i];
+            console.log(`Processing remove queue item ${i + 1}/${queue.length}: ${entry.fileName}`);
+            DOM.setLoadingText(`Removing file ${i + 1} of ${queue.length}: ${entry.fileName}`);
+            
+            try {
+                // Close the dataset in Python
+                await integrations.callPyFunc('close');
+                console.log(`Dataset closed in Python: ${entry.fileName}`);
+            } catch (error) {
+                console.error(`Error closing dataset ${entry.fileName}:`, error);
+            }
+            
+            // Remove from UI and data
+            DOM.leaf_removeMapMarker(appState, entry.fileName);
+            DOM.dom_removeSidebarEntry(entry.fileName);
+            fileHandle.deleteEntryInSimpleData(entry.fileName);
+            fileHandle.deleteDataFile(entry.fileName);
+            appState.selectedFiles.delete(entry.fileName);
+            
+            // Remove processed entry from queue file
+            fileHandle.markRemoveQeueEntryDone(entry.fileName);
+            console.log(`Remove queue entry done: ${entry.fileName}`);
+        }
+    }
 
 </script>
 

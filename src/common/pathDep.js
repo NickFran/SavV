@@ -17,6 +17,7 @@ const savedDataPath = resolveToProperDataPath(__dirname, 'savedData');
 const jsonPath = path.join(savedDataPath, 'simpleData.json');
 const qeuesPath = resolveToProperDataPath(__dirname, 'qeues');
 const importQeuePath = path.join(qeuesPath, 'importQeue.json');
+const removeQeuePath = path.join(qeuesPath, 'removeQeue.json');
 
 // takes the __dirname and returns the current folder name
 function getCurrentFolderName(dirname) {
@@ -106,4 +107,4 @@ function resolveToProperDataPath(dirname, folderName) {
 
 
 
-module.exports = { getCurrentFolderName, getCurrentFolderPath, fromHereToRoot, resolveToProperDataPath, jsonPath, savedDataPath, qeuesPath, importQeuePath };
+module.exports = { getCurrentFolderName, getCurrentFolderPath, fromHereToRoot, resolveToProperDataPath, jsonPath, savedDataPath, qeuesPath, importQeuePath, removeQeuePath };

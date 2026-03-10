@@ -363,6 +363,57 @@ function clearImportQeue() {
     writeImportQeue([]);
 }
 
+/**
+ * Reads the remove queue from disk.
+ * @returns {Array} - Array of queue entries, or empty array if file is empty/missing.
+ */
+function readRemoveQeue() {
+    try {
+        const content = fs.readFileSync(pathDep.removeQeuePath, 'utf-8');
+        if (!content.trim()) return [];
+        return JSON.parse(content);
+    } catch (error) {
+        return [];
+    }
+}
+
+/**
+ * Writes the remove queue to disk.
+ * @param {Array} queue - The queue array to write.
+ */
+function writeRemoveQeue(queue) {
+    fs.writeFileSync(pathDep.removeQeuePath, JSON.stringify(queue, null, 2));
+}
+
+/**
+ * Adds multiple file names to the remove queue.
+ * @param {Array} fileNames - Array of file name strings to queue for removal.
+ */
+function addToRemoveQeue(fileNames) {
+    const queue = readRemoveQeue();
+    fileNames.forEach(fileName => {
+        queue.push({ fileName: fileName, status: 'pending' });
+    });
+    writeRemoveQeue(queue);
+}
+
+/**
+ * Removes a processed entry from the remove queue.
+ * @param {string} fileName - The fileName to remove from the queue.
+ */
+function markRemoveQeueEntryDone(fileName) {
+    let queue = readRemoveQeue();
+    queue = queue.filter(entry => entry.fileName !== fileName);
+    writeRemoveQeue(queue);
+}
+
+/**
+ * Clears the remove queue file.
+ */
+function clearRemoveQeue() {
+    writeRemoveQeue([]);
+}
+
 module.exports = { 
     doesFileAlreadyExist, 
     listSavedDataFiles, 
@@ -381,5 +432,10 @@ module.exports = {
     writeImportQeue,
     addToImportQeue,
     markQeueEntryDone,
-    clearImportQeue
+    clearImportQeue,
+    readRemoveQeue,
+    writeRemoveQeue,
+    addToRemoveQeue,
+    markRemoveQeueEntryDone,
+    clearRemoveQeue
 };
