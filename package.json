@@ -1,7 +1,7 @@
 {
   "name": "my-electron-app",
   "version": "1.0.3",
-  "description": "SavV - Data Visualization Application",
+  "description": "NetSeaDF - Data Visualization Application",
   "author": "Nick",
   "main": "./src/main.js",
   "scripts": {
