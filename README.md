@@ -1,4 +1,5 @@
 # NetSeaDF
+![Main Interface Map Mode](src/media/Main%20Interface_MapMode.png)
 
 NetSeaDF, a cross-platform desktop application for mapping and data visualization for acoustic datasets.
 
@@ -110,3 +111,4 @@ Built installers will be in the `output/` folder:
 - **macOS builds from Windows**: You can build macOS installers on Windows, but they won't be code-signed
 - **First-time macOS users**: Will need to right-click the app and select "Open" to bypass Gatekeeper
 - **Architecture support**: Separate Python distributions are required for Intel vs Apple Silicon Macs
+
