@@ -4,14 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link rel="stylesheet" href="./lib/leaflet/leaflet.css">
-
+    
     <link rel="stylesheet" href="./style/minibanner.css">
     <link rel="stylesheet" href="./style/sidebar.css">
     <link rel="stylesheet" href="./style/style.css">
     <link rel="stylesheet" href="./style/loading.css">
     <link rel="stylesheet" href="./style/map.css">
+
     <script src="./lib/leaflet/leaflet.js"></script>
+    <link rel="stylesheet" href="./lib/leaflet/leaflet.css">
+
+    <script src="./lib/leafletmarkercluster/leaflet.markercluster-src.js"></script>
+    <link rel="stylesheet" href="./lib/leafletmarkercluster/MarkerCluster.Default.css">
+
     <title>NetSeaDF</title>
 
     <!-- MODULES -->
@@ -25,7 +30,9 @@
         const pathDep = require('./common/pathDep.js');
         const integrations = require('./common/integrations.js');
         const fileHandle = require('./common/fileHandle.js');
+        const queue = require('./common/queue.js');
         const DOM = require('./common/DOM.js');
+        const userInteractions = require('./common/userInteractions.js');
     </script>
 
     <!-- VARIABLES -->
@@ -50,6 +57,18 @@
             "FileHandle":
                 {
                 DOM
+                },
+            "queue":
+                {
+                DOM,
+                integrations,
+                fileHandle
+                },
+            "userInteractions":
+                {
+                DOM,
+                fileHandle,
+                pathDep
                 }
         };
    </script>
@@ -153,11 +172,8 @@
     if (this.files.length > 0) {
         const files = Array.from(this.files);
         const fileInput = this; // Store reference to reset later
-        
-        // Step 1: Read all files into buffers, copy to savedData, and build queue entries
         let copiedCount = 0;
         const queueEntries = [];
-        
         files.forEach((file, index) => {
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -173,20 +189,14 @@
                 } catch (err) {
                     console.error("Error saving file:", err);
                 }
-                
                 copiedCount++;
-                // Once all files are copied, populate the queue and start processing
                 if (copiedCount === files.length) {
                     if (queueEntries.length === 0) return;
-                    
                     // Write all entries to the import queue file
-                    fileHandle.addToImportQeue(queueEntries);
+                    queue.addToImportQeue(queueEntries);
                     console.log(`Import queue populated with ${queueEntries.length} file(s)`);
-                    
                     DOM.showLoadingScreen();
-                    
-                    // Process the queue sequentially
-                    processImportQeue().then(() => {
+                    fileHandle.processImportQeue(appState, ModuleDependencies).then(() => {
                         console.log("All queued imports complete");
                         DOM.loadSideBar_Glider(appState, ModuleDependencies["DOM"], DOM.displayDatasetInfo);
                         fileInput.value = '';
@@ -203,117 +213,26 @@
     }
 });
 
-    /**
-     * Reads the import queue file and processes each entry one-by-one.
-     * For each entry: opens in Python, gets overview, saves to JSON, creates map marker, then removes from queue.
-     */
-    async function processImportQeue() {
-        const queue = fileHandle.readImportQeue();
-        
-        for (let i = 0; i < queue.length; i++) {
-            const entry = queue[i];
-            console.log(`Processing queue item ${i + 1}/${queue.length}: ${entry.fileName}`);
-            DOM.setLoadingText(`Importing file ${i + 1} of ${queue.length}: ${entry.fileName}`);
-            
-            try {
-                // Open the file in Python
-                await integrations.callPyFunc('open', [entry.destPath], { timeoutMs: 120000 });
-                console.log(`File loaded into memory: ${entry.fileName}`);
-                
-                // Get overview data
-                const overview = await integrations.callPyFunc('getOverview');
-                
-                // Save to JSON
-                await fileHandle.saveDatasetToJSON(ModuleDependencies["FileHandle"], entry.fileName, overview);
-                
-                // Create map marker if coordinates exist
-                const coords = overview.coordinates;
-                if (coords && coords[0] && coords[0].length > 0 && coords[1] && coords[1].length > 0) {
-                    const lat = coords[0][0];
-                    const lon = coords[1][0];
-                    const popupContent = DOM.leaf_buildPopupContent(
-                        entry.fileName, 
-                        lat, 
-                        lon, 
-                        JSON.stringify(overview.dimensions)
-                    );
-                    DOM.leaf_insertDataMarker(appState, lat, lon, popupContent, {}, entry.fileName);
-                    console.log(`Marker created for: ${entry.fileName}`);
-                }
-                
-                // Remove processed entry from queue file
-                fileHandle.markQeueEntryDone(entry.fileName);
-                console.log(`Queue entry done: ${entry.fileName}`);
-                
-            } catch (error) {
-                console.error(`Error processing ${entry.fileName}:`, error);
-                // Mark as done to avoid getting stuck, but log the error
-                fileHandle.markQeueEntryDone(entry.fileName);
-            }
-        }
-    }
-
     document.getElementById("DeleteFileButton").addEventListener("click", async function() {
         const filesToDelete = Array.from(appState.selectedFiles);
         if (filesToDelete.length === 0) return;
-        
         console.log(`Delete button clicked, ${filesToDelete.length} file(s) selected`);
-        
         // Add all selected files to the remove queue
-        fileHandle.addToRemoveQeue(filesToDelete);
+        queue.addToRemoveQeue(filesToDelete);
         console.log(`Remove queue populated with ${filesToDelete.length} file(s)`);
-        
         DOM.showLoadingScreen();
-        
-        // Process the remove queue sequentially
-        await processRemoveQeue();
-        
-        // Update allFiles list
+        await fileHandle.processRemoveQeue(appState, ModuleDependencies["queue"]);
         appState.allFiles = fileHandle.listSavedDataFiles(
             pathDep.resolveToProperDataPath(__dirname, 'savedData'), 
             '.nc'
         );
         console.log('All queued deletions complete');
-
         DOM.dom_clearElementInnerHTML_UsingString("datasetInfoCardWrapper");
         DOM.dom_clearElementInnerHTML_UsingString('datasetAttrCardWrapper');
         DOM.dom_clearElementInnerHTML_UsingString('datasetVarsCardWrapper');
         DOM.dom_SetElementInnerHTML_UsingString("dataFileHeader", "(Click on a data file to view)");
         DOM.hideLoadingScreen();
-    });
-
-    /**
-     * Reads the remove queue file and processes each entry one-by-one.
-     * For each entry: closes dataset in Python, removes marker, sidebar entry, simpleData entry, and data file.
-     */
-    async function processRemoveQeue() {
-        const queue = fileHandle.readRemoveQeue();
-        
-        for (let i = 0; i < queue.length; i++) {
-            const entry = queue[i];
-            console.log(`Processing remove queue item ${i + 1}/${queue.length}: ${entry.fileName}`);
-            DOM.setLoadingText(`Removing file ${i + 1} of ${queue.length}: ${entry.fileName}`);
-            
-            try {
-                // Close the dataset in Python
-                await integrations.callPyFunc('close');
-                console.log(`Dataset closed in Python: ${entry.fileName}`);
-            } catch (error) {
-                console.error(`Error closing dataset ${entry.fileName}:`, error);
-            }
-            
-            // Remove from UI and data
-            DOM.leaf_removeMapMarker(appState, entry.fileName);
-            DOM.dom_removeSidebarEntry(entry.fileName);
-            fileHandle.deleteEntryInSimpleData(entry.fileName);
-            fileHandle.deleteDataFile(entry.fileName);
-            appState.selectedFiles.delete(entry.fileName);
-            
-            // Remove processed entry from queue file
-            fileHandle.markRemoveQeueEntryDone(entry.fileName);
-            console.log(`Remove queue entry done: ${entry.fileName}`);
-        }
-    }
+});
 
 </script>
 
@@ -328,8 +247,14 @@
 
     data.forEach(entry => {
         console.log("(Map Marker) for:"+ entry.fileName);
-        let x = DOM.leaf_buildPopupContent(entry.fileName, entry.coords[0]["lat"], entry.coords[0]["lon"], JSON.stringify(entry.dims));
-        DOM.leaf_insertDataMarker(appState, entry.coords[0]["lat"], entry.coords[0]["lon"], x, {}, entry.fileName);
+        let x = DOM.leaf_buildPopupContent(entry, instance=false);
+        DOM.leaf_insertDataMarker(appState, ModuleDependencies["DOM"], entry.coords[0]["lat"], entry.coords[0]["lon"], x, {}, entry.fileName);
+    });
+
+    document.addEventListener('click', function(event) {
+    if (event.target && event.target.id === 'mapPopupButton') {
+        userInteractions.userint_ToggleMarkerTimeline(appState, ModuleDependencies["userInteractions"], event);
+    }
     });
 </script>
 <script>
@@ -341,17 +266,35 @@
     //         console.log(`File (first pair): ${entry.fileName}, Lat: ${firstPair.lat}, Lon: ${firstPair.lon}`);
 
     //         // Create group marker at first pair
-    //         const groupMarker = L.marker([firstPair.lat, firstPair.lon]).bindPopup("Group Marker");
+    //         const groupMarker = L.marker([firstPair.lat, firstPair.lon]);
+    //         let markers = L.markerClusterGroup({
+    //             spiderfyOnMaxZoom: false,
+    //             zoomToBoundsOnClick: false
+    //         })
+    //         let lastSpiderfiedCluster = null;
 
+    //         markers.on('clusterclick', function (a) {
+    //             a.layer.spiderfy();
+    //             lastSpiderfiedCluster = a.layer;
+    //         });
+
+    //         appState.map.on('zoomend', function () {
+    //             if (lastSpiderfiedCluster) {
+    //                 // Check if the cluster still exists and is visible
+    //                 if (markers.hasLayer(lastSpiderfiedCluster)) {
+    //                     lastSpiderfiedCluster.spiderfy();
+    //                 }
+    //             }
+    //         });
+    //         markers.addLayer(groupMarker);
+            
     //         // Add remaining coord pairs as markers
     //         for (coordPair of entry.coords.slice(1)) {
     //             console.log(`File: ${entry.fileName}, Lat: ${coordPair.lat}, Lon: ${coordPair.lon}`);
-    //             coordPairArray.push(L.marker([coordPair.lat, coordPair.lon]));
+    //             markers.addLayer(L.marker([coordPair.lat, coordPair.lon]));
     //         }
 
-    //         // Group only this entry's markers
-    //         const group = L.layerGroup([groupMarker, ...coordPairArray]);
-    //         group.addTo(appState.map);
+    //         appState.map.addLayer(markers);
     //     }
 </script>
 </html>

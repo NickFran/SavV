@@ -333,7 +333,8 @@ function hideLoadingScreen() {
  * @param {*} fileName - optional file name to associate with the marker for state management (e.g. for later removal)
  * @returns Marker object that was created and added to the map, or null if coordinates were invalid
  */
-function leaf_insertDataMarker(state, lat, lon, popupText = null, markerOptions = {}, fileName = null) {
+function leaf_insertDataMarker(state, dep, lat, lon, popupText = null, markerOptions = {}, fileName = null, instance=null) {
+    const {pathDep} = dep;
     // Validate coordinates
     if (lat === undefined || lon === undefined || lat === 'N/A' || lon === 'N/A') {
         console.warn('Invalid coordinates provided to insertDataMarker:', { lat, lon });
@@ -341,7 +342,24 @@ function leaf_insertDataMarker(state, lat, lon, popupText = null, markerOptions 
     }
 
     // Create marker with optional custom options
-    const marker = L.marker([lat, lon], markerOptions).addTo(state.map);
+    let gliderIcon= null;
+    if (instance) {
+        gliderIcon = L.icon({
+                iconUrl: path.join(pathDep.fromHereToRoot(__dirname), "src", "media", "bullseye.png"),
+                iconSize: [35, 35],
+                // iconAnchor: [16, 32],
+                // popupAnchor: [0, -32]
+        });
+    } else {
+        gliderIcon = L.icon({
+                iconUrl: path.join(pathDep.fromHereToRoot(__dirname), "src", "media", "GliderIcon.png"),
+                iconSize: [50, 50],
+                // iconAnchor: [16, 32],
+                // popupAnchor: [0, -32]
+        });
+    }
+    
+    const marker = L.marker([lat, lon], { ...markerOptions, icon: gliderIcon }).addTo(state.map);
 
     // Add popup if text is provided
     if (popupText) {
@@ -350,7 +368,7 @@ function leaf_insertDataMarker(state, lat, lon, popupText = null, markerOptions 
 
     // Store marker reference by fileName if provided
     if (fileName) {
-        leaf_storeStateOfMapMarker(state, fileName, marker);
+        leaf_storeStateOfMapMarker(state, fileName, marker, instance);
     }
 
     return marker;
@@ -364,17 +382,31 @@ function leaf_insertDataMarker(state, lat, lon, popupText = null, markerOptions 
  * @param {*} dims - The dimensions of the dataset, to be displayed in the popup.
  * @returns popupContent - An HTML string containing the structured content for the Leaflet marker popup, including dataset information and a button for viewing the data.
  */
-function leaf_buildPopupContent(name, lat, lon, dims) {
-    let popupContent = `<ul>
-            <li>File Name: ${name}</li>
+function leaf_buildPopupContent(entry, instance=null, buttonText=null) {
+    let popupContent = '';
+    if (!instance) {
+        popupContent = `<ul>
+            <li>File Name: ${entry.fileName}</li>
+            <li>Timestamp: ${entry.timestamps["formatted"][0]}</li>
             <br>
-            <li>Latitude: ${lat}</li>
-            <li>Longitude: ${lon}</li>
+            <li>Latitude: ${entry.coords[0]["lat"]}</li>
+            <li>Longitude: ${entry.coords[0]["lon"]}</li>
             <br>
-            <li>Dimensions: ${dims}</li>
+            <li>Dimensions: ${JSON.stringify(entry.dims)}</li>
             <br>
-            <button class="mapPopupButton dis" id="mapPopupButton">View Data</button>
+            <button class="mapPopupButton" id="mapPopupButton" data-marker-data-file="${entry.fileName}">${buttonText ? buttonText : "View Timeline"}</button>
         </ul>`;
+    } else {
+        popupContent = `<ul>
+            <li>File Name: ${entry.fileName}</li>
+            <li>Timestamp: ${entry.timestamps["formatted"][instance]}</li>
+            <br>
+            <li>Latitude: ${entry.coords[0]["lat"]}</li>
+            <li>Longitude: ${entry.coords[0]["lon"]}</li>
+            <br>
+        </ul>`;
+    }
+    
     return popupContent;
 }
 
@@ -384,14 +416,16 @@ function leaf_buildPopupContent(name, lat, lon, dims) {
  * @param {*} fileName - The name of the file (or dataset) that the marker is associated with, used as a key to store the marker reference in the state.
  * @param {*} marker - The Leaflet marker object that should be stored in the state for later retrieval or management.
  */
-function leaf_storeStateOfMapMarker(state, fileName, marker) {
+function leaf_storeStateOfMapMarker(state, fileName, marker, instance=null) {
     if (!state.markers) {
         state.markers = {};
     }
 
-    state.markers[fileName] = marker;
-    console.log(`Marker stored for: ${fileName}`);
-    console.log('Current markers in state:', state.markers);
+    if (instance){
+        state.markers[fileName]["expandedInstances"].push(marker);
+    } else {
+        state.markers[fileName] = {marker: marker, isExpanded: false, expandedInstances:[]};
+    }
 }
 
 /**
@@ -400,7 +434,7 @@ function leaf_storeStateOfMapMarker(state, fileName, marker) {
  * @param {*} fileName - The name of the file (or dataset) whose associated marker should be removed from the map and state.
  * @returns boolean - Returns true if the marker was found and removed, false if no marker was found for the given file name.
  */
-function leaf_removeMapMarker(state, fileName) {
+function leaf_removeMapMarker(state, fileName, instance=null) {
     /**
      * Removes a marker from the map based on fileName.
      * 
@@ -418,14 +452,25 @@ function leaf_removeMapMarker(state, fileName) {
 
     // Remove marker from map (use removeFrom for compatibility)
     const marker = state.markers[fileName];
-    if (state.map) {
-        state.map.removeLayer(marker);
+    if (instance){
+        for (let instanceMarker of marker["expandedInstances"]){
+            state.map.removeLayer(instanceMarker);
+
+        }
+    } else {
+        if (state.map) {
+            state.map.removeLayer(marker["marker"]);
+        }
+        if (marker["isExpanded"]){
+            for (let instanceMarker of marker["expandedInstances"]){
+                state.map.removeLayer(instanceMarker);
+            }
+        }
+        // Delete reference from state
+        delete state.markers[fileName];
     }
     
-    // Delete reference from state
-    delete state.markers[fileName];
     
-    console.log(`Marker removed for: ${fileName}`);
     return true;
 }
 

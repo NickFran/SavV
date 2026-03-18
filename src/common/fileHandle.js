@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const pathDep = require('./pathDep');
+const queue = require('./queue.js');
 
 let allData = null;
 const fileContent = fs.readFileSync(pathDep.jsonPath, 'utf-8');
@@ -311,115 +312,83 @@ async function saveDatasetToJSON(dep, fileName, overview) {
         }
     }
 
-
 /**
- * Reads the import queue from disk.
- * @returns {Array} - Array of queue entries, or empty array if file is empty/missing.
+ * Reads the import queue file and processes each entry one-by-one.
+ * For each entry: opens in Python, gets overview, saves to JSON, creates map marker, then removes from queue.
+ * @param {Object} appState - The application state object.
+ * @param {Object} DOM - The DOM utility object.
+ * @param {Object} integrations - The integrations utility object.
+ * @param {Object} ModuleDependencies - The module dependencies object.
  */
-function readImportQeue() {
-    try {
-        const content = fs.readFileSync(pathDep.importQeuePath, 'utf-8');
-        if (!content.trim()) return [];
-        return JSON.parse(content);
-    } catch (error) {
-        return [];
+async function processImportQeue(appState, ModuleDependencies) {
+    const {DOM, integrations} = ModuleDependencies["queue"];
+    const queueEntries = queue.readImportQeue();
+    console.log(`Processing ${queueEntries} items in import queue...`);
+    for (let i = 0; i < queueEntries.length; i++) {
+        const entry = queueEntries[i];
+        console.log(`Processing queue item ${i + 1}/${queueEntries.length}: ${entry.fileName}`);
+        DOM.setLoadingText(`Importing file ${i + 1} of ${queueEntries.length}: ${entry.fileName}`);
+        try {
+            await integrations.callPyFunc('open', [entry.destPath], { timeoutMs: 120000 });
+            console.log(`File loaded into memory: ${entry.fileName}`);
+            const overview = await integrations.callPyFunc('getOverview');
+            await saveDatasetToJSON(ModuleDependencies["FileHandle"], entry.fileName, overview);
+            const datasetEntry = getEntryInSimpleData(entry.fileName);
+            const coords = datasetEntry.coords;
+            if (coords && coords.length > 0 && coords[0].lat !== undefined && coords[0].lon !== undefined) {
+                const lat = coords[0].lat;
+                const lon = coords[0].lon;
+                console.log(`Creating marker for ${entry.fileName} at lat: ${lat}, lon: ${lon}`);
+                const popupContent = DOM.leaf_buildPopupContent(datasetEntry, instance=false);
+                DOM.leaf_insertDataMarker(appState, lat, lon, popupContent, {}, entry.fileName);
+                console.log(`Marker created for: ${entry.fileName}`);
+            } else {
+                console.warn(`No valid coordinates found for ${entry.fileName}, marker not created.`);
+            }
+            queue.markQeueEntryDone(entry.fileName);
+            console.log(`Queue entry done: ${entry.fileName}`);
+        } catch (error) {
+            console.error(`Error processing ${entry.fileName}:`, error);
+            queue.markQeueEntryDone(entry.fileName);
+        }
     }
 }
 
 /**
- * Writes the import queue to disk.
- * @param {Array} queue - The queue array to write.
+ * Reads the remove queue file and processes each entry one-by-one.
+ * For each entry: closes dataset in Python, removes marker, sidebar entry, simpleData entry, and data file.
  */
-function writeImportQeue(queue) {
-    fs.writeFileSync(pathDep.importQeuePath, JSON.stringify(queue, null, 2));
-}
-
-/**
- * Adds multiple file entries to the import queue.
- * @param {Array} entries - Array of { fileName, destPath } objects.
- */
-function addToImportQeue(entries) {
-    const queue = readImportQeue();
-    entries.forEach(entry => {
-        queue.push({ fileName: entry.fileName, destPath: entry.destPath, status: 'pending' });
-    });
-    writeImportQeue(queue);
-}
-
-/**
- * Marks a queue entry as done and writes the updated queue to disk.
- * @param {string} fileName - The fileName to mark as done.
- */
-function markQeueEntryDone(fileName) {
-    let queue = readImportQeue();
-    queue = queue.filter(entry => entry.fileName !== fileName);
-    writeImportQeue(queue);
-}
-
-/**
- * Clears the import queue file.
- */
-function clearImportQeue() {
-    writeImportQeue([]);
-}
-
-/**
- * Reads the remove queue from disk.
- * @returns {Array} - Array of queue entries, or empty array if file is empty/missing.
- */
-function readRemoveQeue() {
-    try {
-        const content = fs.readFileSync(pathDep.removeQeuePath, 'utf-8');
-        if (!content.trim()) return [];
-        return JSON.parse(content);
-    } catch (error) {
-        return [];
+async function processRemoveQeue(appState, dep) {
+    const { DOM,integrations } = dep;
+    const queueEntries = queue.readRemoveQeue();
+    for (let i = 0; i < queueEntries.length; i++) {
+        const entry = queueEntries[i];
+        console.log(`Processing remove queue item ${i + 1}/${queueEntries.length}: ${entry.fileName}`);
+        DOM.setLoadingText(`Removing file ${i + 1} of ${queueEntries.length}: ${entry.fileName}`);
+        try {
+            await integrations.callPyFunc('close');
+            console.log(`Dataset closed in Python: ${entry.fileName}`);
+        } catch (error) {
+            console.error(`Error closing dataset ${entry.fileName}:`, error);
+        }
+        DOM.leaf_removeMapMarker(appState, entry.fileName);
+        DOM.dom_removeSidebarEntry(entry.fileName);
+        deleteEntryInSimpleData(entry.fileName);
+        deleteDataFile(entry.fileName);
+        appState.selectedFiles.delete(entry.fileName);
+        queue.markRemoveQeueEntryDone(entry.fileName);
+        console.log(`Remove queue entry done: ${entry.fileName}`);
     }
 }
 
-/**
- * Writes the remove queue to disk.
- * @param {Array} queue - The queue array to write.
- */
-function writeRemoveQeue(queue) {
-    fs.writeFileSync(pathDep.removeQeuePath, JSON.stringify(queue, null, 2));
-}
-
-/**
- * Adds multiple file names to the remove queue.
- * @param {Array} fileNames - Array of file name strings to queue for removal.
- */
-function addToRemoveQeue(fileNames) {
-    const queue = readRemoveQeue();
-    fileNames.forEach(fileName => {
-        queue.push({ fileName: fileName, status: 'pending' });
-    });
-    writeRemoveQeue(queue);
-}
-
-/**
- * Removes a processed entry from the remove queue.
- * @param {string} fileName - The fileName to remove from the queue.
- */
-function markRemoveQeueEntryDone(fileName) {
-    let queue = readRemoveQeue();
-    queue = queue.filter(entry => entry.fileName !== fileName);
-    writeRemoveQeue(queue);
-}
-
-/**
- * Clears the remove queue file.
- */
-function clearRemoveQeue() {
-    writeRemoveQeue([]);
-}
-
-module.exports = { 
-    doesFileAlreadyExist, 
-    listSavedDataFiles, 
+module.exports = {
+    doesFileAlreadyExist,
+    listSavedDataFiles,
     copyFileToSavedData,
+    processImportQeue,
+    processRemoveQeue,
     copyFileToSavedDataViaBuffer,
-    isSimpleDataEmpty, 
+    isSimpleDataEmpty,
     getKeysOfEntryInSimpleData,
     getEntryInSimpleData,
     getEntryKeyInSimpleData,
@@ -427,15 +396,5 @@ module.exports = {
     getAllSimpleData,
     deleteDataFile,
     deleteEntryInSimpleData,
-    saveDatasetToJSON,
-    readImportQeue,
-    writeImportQeue,
-    addToImportQeue,
-    markQeueEntryDone,
-    clearImportQeue,
-    readRemoveQeue,
-    writeRemoveQeue,
-    addToRemoveQeue,
-    markRemoveQeueEntryDone,
-    clearRemoveQeue
+    saveDatasetToJSON
 };
