@@ -1,5 +1,45 @@
 // DOM manipulation functions
+const { time } = require('console');
 const path = require('path');
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const tabVars = document.getElementById("dataTab-Vars");
+    const tabDimsCoords = document.getElementById("dataTab-DimsCoords");
+    const tabAttrs = document.getElementById("dataTab-Attrs");
+    if (tabVars && tabDimsCoords && tabAttrs) {
+        const parent = tabVars.parentElement;
+
+        tabDimsCoords.addEventListener("click", (event) => {
+            parent.querySelectorAll('.dataTab').forEach(tab => tab.classList.remove('tabActive'));
+            tabDimsCoords.classList.add('tabActive');
+            document.getElementById('datasetVarsCardWrapper').style.display = 'none';
+            document.getElementById('datasetAttrCardWrapper').style.display = 'none';
+            document.getElementById('datasetInfoCardWrapper').style.display = 'block';
+            console.log('dataTab-DimsCoords clicked');
+        });
+        tabAttrs.addEventListener("click", (event) => {
+            parent.querySelectorAll('.dataTab').forEach(tab => tab.classList.remove('tabActive'));
+            tabAttrs.classList.add('tabActive');
+            document.getElementById('datasetVarsCardWrapper').style.display = 'none';
+            document.getElementById('datasetAttrCardWrapper').style.display = 'block';
+            document.getElementById('datasetInfoCardWrapper').style.display = 'none';
+            console.log('dataTab-Attrs clicked');
+        });
+        tabVars.addEventListener("click", (event) => {
+            parent.querySelectorAll('.dataTab').forEach(tab => tab.classList.remove('tabActive'));
+            tabVars.classList.add('tabActive');
+            document.getElementById('datasetVarsCardWrapper').style.display = 'block';
+            document.getElementById('datasetAttrCardWrapper').style.display = 'none';
+            document.getElementById('datasetInfoCardWrapper').style.display = 'none';
+            console.log('dataTab-Vars clicked');
+        });
+    }
+});
+
+
+
 
 
 /**
@@ -10,9 +50,9 @@ const path = require('path');
  * @returns 
  */
 function displayDatasetInfo(state, deps, fileName) {
-    const { pathDep, fileHandle, integrations } = deps;
+    const { pathDep, fileHandle } = deps;
 
-    document.getElementById('dataFileHeader').textContent = `${fileName}`;
+    document.getElementById('titleTargetFile').textContent = `${fileName}`;
     
     try {
         const fileContent = fs.readFileSync(pathDep.jsonPath, 'utf-8');
@@ -171,6 +211,7 @@ function displayDatasetInfo(state, deps, fileName) {
  */
 function loadSideBar_Glider(state, deps, onFileSelect) {
     const { pathDep, fileHandle, integrations } = deps;
+    state.currentFileIndexTarget = 0;
     
     // get the folder that the data is in
     const savedDataPath = pathDep.resolveToProperDataPath(__dirname, 'savedData');
@@ -424,7 +465,13 @@ function leaf_storeStateOfMapMarker(state, fileName, marker, instance=null) {
     if (instance){
         state.markers[fileName]["expandedInstances"].push(marker);
     } else {
-        state.markers[fileName] = {marker: marker, isExpanded: false, expandedInstances:[]};
+        state.markers[fileName] = {
+            marker: marker, 
+            isExpanded: false, 
+            expandedInstances:[], 
+            instancesFilterStatus: [], 
+            isFiltered: false, 
+            additionalInstances: []};
     }
 }
 
@@ -472,6 +519,11 @@ function leaf_removeMapMarker(state, fileName, instance=null) {
     
     
     return true;
+}
+
+function leaf_OpaqueMapMarker(state, fileName, opaque, index, isInstance=false) {
+    console.log('Attempting to obscure marker for:', fileName, index);
+    state.markers[fileName].marker.setOpacity(opaque);
 }
 
 /**
@@ -525,6 +577,31 @@ function getSidebarEntryObjectFromFileName(fileName) {
     
 }
 
+function leaf_filterPlatformsByTimeRange(state, dep, startTime, endTime) {
+    const {pathDep, fileHandle, integrations} = dep;
+
+    let data = fileHandle.getAllSimpleData();
+    for (const entry of JSON.parse(data)) {
+        let currentEvalTimestamp = entry.timestamps["formatted"][0];
+            if (currentEvalTimestamp > startTime && currentEvalTimestamp < endTime) {
+                console.log(`Timestamp within range [${0}]:`, currentEvalTimestamp);
+                leaf_OpaqueMapMarker(state, entry.fileName, 1, 0, false);
+                state.markers[entry.fileName].isFiltered = false;
+            } else {
+                leaf_OpaqueMapMarker(state, entry.fileName, .2, 0, false);
+                state.markers[entry.fileName].isFiltered = true;
+            }
+        }
+    // get total number of filtered markers
+    const totalFiltered = Object.values(state.markers).filter(marker => marker.isFiltered).length;
+    console.log(`Total markers filtered out: ${Object.keys(state.markers).length - totalFiltered}`);
+    document.getElementById('leafletMapHeader').innerHTML = `Visible: ${Object.keys(state.markers).length - totalFiltered} out of ${Object.keys(state.markers).length} platforms`;
+}
+
+
+
+
+
 module.exports = {
     loadSideBar_Glider,
     dom_createElm_GliderListItem,
@@ -540,5 +617,6 @@ module.exports = {
     dom_removeSidebarEntry,
     dom_SetElementInnerHTML_UsingString,
     dom_SetElementInnerHTML_UsingObject,
-    getSidebarEntryObjectFromFileName
+    getSidebarEntryObjectFromFileName,
+    leaf_filterPlatformsByTimeRange
 };

@@ -17,6 +17,8 @@
     <script src="./lib/leafletmarkercluster/leaflet.markercluster-src.js"></script>
     <link rel="stylesheet" href="./lib/leafletmarkercluster/MarkerCluster.Default.css">
 
+    <script src="./lib/echarts/echarts.js"></script>
+
     <title>NetSeaDF</title>
 
     <!-- MODULES -->
@@ -33,6 +35,8 @@
         const queue = require('./common/queue.js');
         const DOM = require('./common/DOM.js');
         const userInteractions = require('./common/userInteractions.js');
+        const basicFunctions = require('./common/basicFunctions.js');
+        const charts = require('./common/charts.js');
     </script>
 
     <!-- VARIABLES -->
@@ -42,8 +46,10 @@
             allFiles: fileHandle.listSavedDataFiles(pathDep.resolveToProperDataPath(__dirname, 'savedData'), '.nc'),
             isMultiSelect: false,
             selectedFiles: new Set(),
+            currentFileIndexTarget: null,
             map: undefined,
-            markers: {}
+            markers: {},
+            mapTimelineZoomRange: []
         };
         
         // Dependencies object for DOM functions
@@ -69,7 +75,12 @@
                 DOM,
                 fileHandle,
                 pathDep
-                }
+                },
+            "charts":
+                {
+                DOM,
+                fileHandle
+                 }
         };
    </script>
 
@@ -108,7 +119,7 @@
 
     <div class="sidebar" id="sidebar">
         <div class="wrapper">
-            <h2>Files</h2>
+            <h2>Platforms</h2>
             <details id="GliderDropDown">
                 <summary>Gliders</summary>
                     <ul class="GliderList" id="GliderList">
@@ -126,24 +137,54 @@
     <div class="main" id="main">
         <div class="mapPage">        
             <div class="card">
-                <div id="dataFileHeader" class="dataFileHeader">(Click on a data file to view)</div>
-                <div id="datasetInfoCardWrapper" class="cardWrapper">
+            </div>
+            <div class="card">
+                <div class="timelineWrapper">
+                    <div class="TimelineRangeLabel" id="minTimelineRangeLabel"></div>
+                    <div class="TimelineRangeLabel" id="maxTimelineRangeLabel"></div>
+                    <div class="timeline" id="timeline" style="width: 100%; height: 100%;"></div>
                 </div>
             </div>
             <div class="card">
+                <div class="titleTargetFileWrapper">
+                    <div class="arrow backArrow" id="backArrow">←</div>
+                    <div class="titleTargetFile" id="titleTargetFile">Data</div>
+                    <div class="arrow forwardArrow" id="forwardArrow">→</div>
+                </div>
+                <div class="dataTabs">
+                    <div class="dataTab" id="dataTab-Vars">Vars</div>
+                    <div class="dataTab" id="dataTab-DimsCoords">Dims/Coords</div>
+                    <div class="dataTab" id="dataTab-Attrs">Attrs</div>
+                </div>
+                <div id="datasetVarsCardWrapper" class="cardWrapper datasetVarsCardWrapper">
+                    <ul>
+                    </ul>
+                </div>
+                <div id="datasetInfoCardWrapper" class="cardWrapper datasetInfoCardWrapper">
+                    <ul>
+                    </ul>
+                </div>
                 <div id="datasetAttrCardWrapper" class="cardWrapper datasetAttrCardWrapper">
                     <ul>
                     </ul>
                 </div>
             </div>
-            <div class="card">
-                <div id="datasetVarsCardWrapper" class="cardWrapper datasetVarsCardWrapper">
-                    <ul>
-                    </ul>
-                </div>
-            </div>
-            <div class="card">
-                 <div id="map"></div>
+              <div class="card">
+                                 <div id="map"></div>
+                                 <script>
+                                 // Add overlay text as a Leaflet control using the existing map instance
+                                 document.addEventListener('DOMContentLoaded', function() {
+                                     if (window.L && appState && appState.map) {
+                                         var customControl = window.L.control({position: 'topright'});
+                                         customControl.onAdd = function() {
+                                             var div = window.L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+                                               div.innerHTML = '<span id="leafletMapHeader" style="padding:4px 12px;font-weight:bold;font-size:1em;background:rgba(255,255,255,0.85);border-radius:6px;box-shadow:0 2px 6px #0002;">Leaflet Map Overview</span>';
+                                             return div;
+                                         };
+                                         customControl.addTo(appState.map);
+                                     }
+                                 });
+                                 </script>
             </div>
         </div>
         <div class="viewPage">        
@@ -234,6 +275,32 @@
         DOM.hideLoadingScreen();
 });
 
+    document.getElementById("backArrow").addEventListener("click", function() {
+        let nextIndex;
+        console.log("Back arrow clicked");
+        if (Array.from(appState.selectedFiles).length === 0) {
+            console.log("No file selected, ignoring back arrow click");
+            return;
+        } else {
+            nextIndex = basicFunctions.getNextIndex(appState.currentFileIndexTarget, Array.from(appState.selectedFiles).length, 'back');
+            appState.currentFileIndexTarget = nextIndex;
+            console.log("Next index:", nextIndex);
+            DOM.displayDatasetInfo(appState, ModuleDependencies["DOM"], Array.from(appState.selectedFiles)[appState.currentFileIndexTarget]);
+        }
+    });
+    document.getElementById("forwardArrow").addEventListener("click", function() {
+        let nextIndex;
+        console.log("Forward arrow clicked");
+        if (Array.from(appState.selectedFiles).length === 0) {
+            console.log("No file selected, ignoring forward arrow click");
+            return;
+        } else {
+            nextIndex = basicFunctions.getNextIndex(appState.currentFileIndexTarget, Array.from(appState.selectedFiles).length, 'forward');
+            appState.currentFileIndexTarget = nextIndex;
+            console.log("Next index:", nextIndex);
+            DOM.displayDatasetInfo(appState, ModuleDependencies["DOM"], Array.from(appState.selectedFiles)[appState.currentFileIndexTarget]);
+        }       
+    });
 </script>
 
 <script>
@@ -258,43 +325,8 @@
     });
 </script>
 <script>
-    // x1 = fileHandle.getAllSimpleData();
-    //     for (entry of JSON.parse(x1)) {
-    //         // Reset array for each entry
-    //         let coordPairArray = [];
-    //         const firstPair = entry.coords[0];
-    //         console.log(`File (first pair): ${entry.fileName}, Lat: ${firstPair.lat}, Lon: ${firstPair.lon}`);
-
-    //         // Create group marker at first pair
-    //         const groupMarker = L.marker([firstPair.lat, firstPair.lon]);
-    //         let markers = L.markerClusterGroup({
-    //             spiderfyOnMaxZoom: false,
-    //             zoomToBoundsOnClick: false
-    //         })
-    //         let lastSpiderfiedCluster = null;
-
-    //         markers.on('clusterclick', function (a) {
-    //             a.layer.spiderfy();
-    //             lastSpiderfiedCluster = a.layer;
-    //         });
-
-    //         appState.map.on('zoomend', function () {
-    //             if (lastSpiderfiedCluster) {
-    //                 // Check if the cluster still exists and is visible
-    //                 if (markers.hasLayer(lastSpiderfiedCluster)) {
-    //                     lastSpiderfiedCluster.spiderfy();
-    //                 }
-    //             }
-    //         });
-    //         markers.addLayer(groupMarker);
-            
-    //         // Add remaining coord pairs as markers
-    //         for (coordPair of entry.coords.slice(1)) {
-    //             console.log(`File: ${entry.fileName}, Lat: ${coordPair.lat}, Lon: ${coordPair.lon}`);
-    //             markers.addLayer(L.marker([coordPair.lat, coordPair.lon]));
-    //         }
-
-    //         appState.map.addLayer(markers);
-    //     }
+window.onload = function() {
+    charts.initTimeline(appState, ModuleDependencies["charts"], ModuleDependencies["DOM"]);
+};
 </script>
 </html>

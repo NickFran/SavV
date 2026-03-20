@@ -1,3 +1,12 @@
+html, body {
+    overflow: hidden !important;
+    height: 100%;
+}
+/* Allow ECharts tooltip box to overflow */
+.echarts-tooltip {
+    overflow:hidden;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -41,21 +50,22 @@ body {
 
 .mapPage {
     height: 100%;
-    gap: 15px;
-    padding: 15px;
+    gap: 10px;
+    padding: 10px;
 
     box-sizing: border-box;
     display: grid;
 
     grid-template-columns: 1.7fr 1fr 1fr 1fr 1fr 1fr 1fr; 
-    grid-template-rows: auto 0fr 0fr 0fr .65fr; 
+    grid-template-rows: auto 0fr 0fr 0fr .15fr; 
     grid-template-areas: 
-    "card1 card1     card2 card2 card2 card2 card2"
-    "card1 card1     card2 card2 card2 card2 card2"
+    "card3     card4 card4 card4 card4 card4 card4"
+    "card3     card4 card4 card4 card4 card4 card4"
+    "card3     card4 card4 card4 card4 card4 card4"
 
-    "card3     card4 card4 card4 card4 card4 card4"
-    "card3     card4 card4 card4 card4 card4 card4"
-    "card3     card4 card4 card4 card4 card4 card4";
+    "card1 card1     card2 card2 card2 card2 card2"
+    "card1 card1     card2 card2 card2 card2 card2";
+
 }
 
 .viewPage {
@@ -87,6 +97,8 @@ body {
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(1, 1, 1, 0.5);
     */
+
+    
 }
 .card p{
     background-color: inherit;
@@ -238,6 +250,16 @@ body {
     list-style-type: square;
     margin-left: 20px;
 }
+.datasetInfoCardWrapper {
+    display: none;
+}
+.datasetAttrCardWrapper {
+    display: none;
+}
+
+.hide {
+    display: none;
+}
 
 
 
@@ -246,4 +268,131 @@ body {
     border: 1px solid #00000031;
     color: rgba(0, 0, 0, 0.171);
     cursor:not-allowed;
+}
+.nonSel {
+    user-select: none;
+}
+
+
+.dataTabs {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    border-top: #0000002a 2px solid;
+    /* Prevent tabs from pushing upward in grid */
+    box-sizing: border-box;
+    overflow-x: auto;
+    align-items: stretch;
+    user-select: none;
+}
+.dataTab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 10px 2px;
+    cursor:pointer;
+    box-sizing: border-box;
+    min-width: 0;
+    width: 100%;
+}
+.tabActive {
+    background-color: #007bff;
+    /*#7ab0e9;*/
+    color: white;
+}
+.dataTab:not(.tabActive):hover {
+    background-color: #e0e0e0;
+}
+
+
+.titleTargetFileWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 8px;
+    user-select: none;
+}
+.arrow{
+    cursor: pointer;
+    background-color: #7ab0e9;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    text-decoration: solid;
+    color: white;
+}.arrow:hover {
+    background-color: #0077ff;
+    box-shadow: #0000002a 0px 4px 4px;
+    border-radius: 10px;
+    transition: all 0.1s ease-in-out;
+}
+
+.backArrow, .forwardArrow {
+    width: 20px;
+    height: 20px;
+    padding: 4px 6px;
+    border-radius: 5px;
+}
+.backArrow {
+    margin-right: 10px;
+}
+.forwardArrow {
+    margin-left: 10px;
+}
+
+.titleTargetFile{
+    font-weight: bold;
+    color: #000000;
+    font-size: 1vw;
+    text-align: center;
+}
+
+
+/* Timeline chart centering */
+.timeline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+}
+
+.timelineWrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+.TimelineRangeLabel {
+    padding: 5px 10px;
+    border-radius: 5px;
+    color: #000000;
+    white-space: nowrap;
+    width: 15%;
+    position: absolute;
+    font-size: 16px;
+    
+}   
+#maxTimelineRangeLabel{
+    text-align: right;
+    right: 0;
+    top: 16%;
+    margin-right: 20px;
+    }
+#minTimelineRangeLabel{
+    text-align: left;
+        left: 0;
+        top: 16%;
+        margin-left: 30px;
+    }
+
+#map, .leaflet-container {
+    background: #aad3df !important; /* Replace with your desired color */
 }
