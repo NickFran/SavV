@@ -17,3 +17,6 @@
 * add selection color to all multi files
 
 * all instance markers have the same coords, check to make sure this is normal and not some DOM issue.
+
+* the checkbox for 12hr clock in the timeline selection is creating null values because its not checking if a datetime has been chosed before conversion.
+  * watch to see if this causes issues, if so, lets check our mode, then check if that modes range is a valid date, then convert. 

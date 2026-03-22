@@ -8,7 +8,7 @@ const { app } = require("electron");
 
 function userint_ToggleMarkerTimeline(state, dep, event) {
     // initialize dependencies 
-    const {DOM, fileHandle, pathDep} = dep;
+    const {DOM, fileHandle, pathDep, basicFunctions} = dep;
     const file = event.target.dataset.markerDataFile;
     
         // init array that holds polylines (will update with more sophisticated structure later)
@@ -47,42 +47,37 @@ function userint_ToggleMarkerTimeline(state, dep, event) {
                 Lon: ${currentFileToExpand.coords[coordPair].lon}
                 `);
                 
+
+
                 // current coord pair instance
                 latNlon = [currentFileToExpand.coords[coordPair].lat, currentFileToExpand.coords[coordPair].lon];
-                let instancePopupContent = DOM.leaf_buildPopupContent(currentFileToExpand, instance=coordPair);
-                DOM.leaf_insertDataMarker(state, ModuleDependencies["DOM"], latNlon[0], latNlon[1], instancePopupContent, {}, currentFileToExpand.fileName, instance=true);
-                state.markers[file].isExpanded = true; // set marker state to expanded
-                polyLineVerts.push(latNlon); // add new coordinate pair to polyline array
-                
-                // init instance number (string for marker icon)
-                const numberIcon = L.divIcon({
-                className: 'number-icon',
-                html: `<div style="font-size:16px;font-weight:bold;color:#fff;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;">${coordPair}</div>`,
-                iconSize: [1, 1],
-                iconAnchor: [16, 30]
-                });
-
-                // Add number icon marker to map
-                let instanceNumber = L.marker(latNlon, { icon: numberIcon })
-                instanceNumber.addTo(state.map);
-                appState.markers[file].additionalInstances.Numbers.push(instanceNumber); // store instance marker reference for later removal when collapsing
-            }
-
-            console.log(`Marker for file ${file} expanded with ${currentFileToExpand.coords.length - 1} instance(s)`);
-        
-            // establish polyline connecting all coordinate pairs for this marker
-            const latlngs = polyLineVerts;
-            const polyline = L.polyline(latlngs, {
+                let previousCoordPair = [currentFileToExpand.coords[coordPair-1].lat, currentFileToExpand.coords[coordPair-1].lon];
+                let currentCoordPair = latNlon;
+                const polyline = L.polyline([previousCoordPair, currentCoordPair], {
                     color: 'blue',
                     weight: 3,
                     opacity: 0.8,
                     dashArray: '10, 5',
                     lineCap: 'round',
                     lineJoin: 'round'
-            });
-            // add new line to map
-            polyline.addTo(state.map);
-            appState.markers[file].additionalInstances.polyLines.push(polyline);
+                });
+                polyline.addTo(state.map);
+                state.markers[file].additionalInstances.polyLines.push(polyline);
+
+
+
+                let instancePopupContent = DOM.leaf_buildPopupContent(currentFileToExpand, instance=coordPair);
+                DOM.leaf_insertDataMarker(state, ModuleDependencies["DOM"], latNlon[0], latNlon[1], instancePopupContent, {}, currentFileToExpand.fileName, instance=true);
+                state.markers[file].isExpanded = true; // set marker state to expanded
+                
+                // init instance number (string for marker icon)
+                
+                DOM.leaf_addPolyNumberToMap(state, file, latNlon, coordPair);
+                
+            }
+            
+            
+        
         }
 }
 

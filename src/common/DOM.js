@@ -425,7 +425,7 @@ function leaf_insertDataMarker(state, dep, lat, lon, popupText = null, markerOpt
  */
 function leaf_buildPopupContent(entry, instance=null, buttonText=null) {
     let popupContent = '';
-    if (!instance) {
+    if (instance == false) {
         popupContent = `<ul>
             <li>File Name: ${entry.fileName}</li>
             <li>Timestamp: ${entry.timestamps["formatted"][0]}</li>
@@ -442,8 +442,8 @@ function leaf_buildPopupContent(entry, instance=null, buttonText=null) {
             <li>File Name: ${entry.fileName}</li>
             <li>Timestamp: ${entry.timestamps["formatted"][instance]}</li>
             <br>
-            <li>Latitude: ${entry.coords[0]["lat"]}</li>
-            <li>Longitude: ${entry.coords[0]["lon"]}</li>
+            <li>Latitude: ${entry.coords[instance]["lat"]}</li>
+            <li>Longitude: ${entry.coords[instance]["lon"]}</li>
             <br>
         </ul>`;
     }
@@ -601,22 +601,43 @@ function leaf_filterPlatformsByTimeRange(state, dep, startTime, endTime) {
     let data = fileHandle.getAllSimpleData();
     for (const entry of JSON.parse(data)) {
         let currentEvalTimestamp = entry.timestamps["formatted"][0];
-            if (currentEvalTimestamp > startTime && currentEvalTimestamp < endTime) {
-                console.log(`Timestamp within range [${0}]:`, currentEvalTimestamp);
-                leaf_OpaqueMapMarker(state, entry.fileName, 1, 0, false);
-                state.markers[entry.fileName].isFiltered = false;
-            } else {
-                leaf_OpaqueMapMarker(state, entry.fileName, .2, 0, false);
-                state.markers[entry.fileName].isFiltered = true;
-            }
+        // Convert all to Date objects for robust comparison
+        let evalDate = new Date(currentEvalTimestamp);
+        let startDate = new Date(startTime);
+        let endDate = new Date(endTime);
+        if (evalDate > startDate && evalDate < endDate) {
+            console.log(`Timestamp within range [${0}]:`, currentEvalTimestamp);
+            leaf_OpaqueMapMarker(state, entry.fileName, 1, 0, false);
+            state.markers[entry.fileName].isFiltered = false;
+        } else {
+            leaf_OpaqueMapMarker(state, entry.fileName, .2, 0, false);
+            state.markers[entry.fileName].isFiltered = true;
         }
+    }
     // get total number of filtered markers
     const totalFiltered = Object.values(state.markers).filter(marker => marker.isFiltered).length;
     console.log(`Total markers filtered out: ${Object.keys(state.markers).length - totalFiltered}`);
     document.getElementById('leafletMapHeader').innerHTML = `Visible: ${Object.keys(state.markers).length - totalFiltered} out of ${Object.keys(state.markers).length} platforms`;
 }
 
+function leaf_addPolyNumberToMap(state, file, latlon, number){
+    const numberIcon = L.divIcon({
+                className: 'number-icon',
+                html: `<div style="font-size:16px;font-weight:bold;color:#fff;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;">${number}</div>`,
+                iconSize: [1, 1],
+                iconAnchor: [16, 30]
+                });
 
+                // Add number icon marker to map
+                let instanceNumber = L.marker(latlon, { icon: numberIcon })
+                instanceNumber.addTo(state.map);
+                state.markers[file].additionalInstances.Numbers.push(instanceNumber); // store instance marker reference for later removal when collapsing
+}
+
+function leaf_UpdateTimelineHeader(state, min, max){
+    document.getElementById('MapTimelineFilterHeader').innerText = `Timeline Range: ${min} - ${max}`;
+    window.updateCenterDivPosition();
+}
 
 
 
@@ -636,5 +657,7 @@ module.exports = {
     dom_SetElementInnerHTML_UsingString,
     dom_SetElementInnerHTML_UsingObject,
     getSidebarEntryObjectFromFileName,
-    leaf_filterPlatformsByTimeRange
+    leaf_filterPlatformsByTimeRange,
+    leaf_addPolyNumberToMap,
+    leaf_UpdateTimelineHeader
 };

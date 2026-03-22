@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="./style/style.css">
     <link rel="stylesheet" href="./style/loading.css">
     <link rel="stylesheet" href="./style/map.css">
+    <link rel="stylesheet" href="./style/objects.css">
 
     <script src="./lib/leaflet/leaflet.js"></script>
     <link rel="stylesheet" href="./lib/leaflet/leaflet.css">
@@ -49,7 +50,12 @@
             currentFileIndexTarget: null,
             map: undefined,
             markers: {},
-            mapTimelineZoomRange: []
+            mapTimelineMode: "slider", // or "input"
+            mapTimeline12hrClock: false,
+            mapTimelineRange: {
+                slider: [],
+                input: []
+            }
         };
         
         // Dependencies object for DOM functions
@@ -74,12 +80,14 @@
                 {
                 DOM,
                 fileHandle,
-                pathDep
+                pathDep,
+                basicFunctions
                 },
             "charts":
                 {
                 DOM,
-                fileHandle
+                fileHandle,
+                basicFunctions
                  }
         };
    </script>
@@ -137,11 +145,37 @@
     <div class="main" id="main">
         <div class="mapPage">        
             <div class="card">
+                    
+                    <div class="timelineOptionWrapper">
+                        <h4>Timeline Preference</h4>
+                        <select id="timelineDropdown" class="timelineDropdown">
+                            <option value="option1">Manual Slider</option>
+                            <option value="option2">Manual Input</option>
+                        </select>
+                    </div>
+                    <div class="timelineOptionWrapper">
+                        <input id="timeline12hrInput" class="timelineInput" type="checkbox">Use 12 HR clock (only for slider)</input>
+                    </div>
             </div>
             <div class="card">
                 <div class="timelineWrapper">
-                    <div class="TimelineRangeLabel" id="minTimelineRangeLabel"></div>
-                    <div class="TimelineRangeLabel" id="maxTimelineRangeLabel"></div>
+                    <table class="rangeTable">
+                        <tr>
+                            <th></th>
+                            <th>Start</th>
+                            <th>End</th>
+                        </tr>
+                        <tr>
+                            <td>Input</td>
+                            <td class="Slider">
+                                <input type="datetime-local" id="minTimelineRangeInput" class="timelineRangeInput" value="00:00">
+                            </td>
+                            <td class="Slider">
+                                <input type="datetime-local" id="maxTimelineRangeInput" class="timelineRangeInput" value="00:00">
+                            </td>
+                        </tr>
+                    </table>
+                    <button class="filterButton" id="timelineFilterButton">Apply Filter</button>
                     <div class="timeline" id="timeline" style="width: 100%; height: 100%;"></div>
                 </div>
             </div>
@@ -175,13 +209,34 @@
                                  // Add overlay text as a Leaflet control using the existing map instance
                                  document.addEventListener('DOMContentLoaded', function() {
                                      if (window.L && appState && appState.map) {
+                                         // Top right control (existing)
                                          var customControl = window.L.control({position: 'topright'});
                                          customControl.onAdd = function() {
                                              var div = window.L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-                                               div.innerHTML = '<span id="leafletMapHeader" style="padding:4px 12px;font-weight:bold;font-size:1em;background:rgba(255,255,255,0.85);border-radius:6px;box-shadow:0 2px 6px #0002;">Leaflet Map Overview</span>';
+                                             div.innerHTML = '<span id="leafletMapHeader" style="padding:4px 12px;font-weight:bold;font-size:1em;background:rgba(255,255,255,0.85);border-radius:6px;box-shadow:0 2px 6px #0002;">Leaflet Map Overview</span>';
                                              return div;
                                          };
                                          customControl.addTo(appState.map);
+
+                                         // Centered control in map bounding box
+                                         var centerDiv = window.L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+                                         centerDiv.innerHTML = '<span id="MapTimelineFilterHeader" style="padding:4px 18px;font-weight:bold;font-size:1em;background:rgba(255,255,255,0.35);border-radius:6px;box-shadow:0 2px 6px #0002;"></span>';
+                                         centerDiv.style.position = 'absolute';
+                                         centerDiv.style.pointerEvents = 'auto';
+                                         centerDiv.style.zIndex = 1000;
+                                         appState.map.getContainer().appendChild(centerDiv);
+
+                                         window.updateCenterDivPosition = function() {
+                                             var map = appState.map;
+                                             var mapContainer = map.getContainer();
+                                             var mapRect = mapContainer.getBoundingClientRect();
+                                             var divRect = centerDiv.getBoundingClientRect();
+                                             // Center horizontally in map bounding box, 12px from top
+                                             centerDiv.style.left = ((mapRect.width - divRect.width) / 2) + 'px';
+                                             centerDiv.style.top = '12px';
+                                         };
+                                         window.updateCenterDivPosition();
+                                         appState.map.on('move resize zoom', window.updateCenterDivPosition);
                                      }
                                  });
                                  </script>
@@ -203,6 +258,14 @@
     window.addEventListener('load', function() {
         setTimeout(DOM.hideLoadingScreen, 500); // Minimum loading time
     });
+
+    // init timeline display
+    const rangeTable = document.querySelector('.rangeTable');
+    const filterButton = document.getElementById('timelineFilterButton');
+    const timeline = document.getElementById('timeline');
+    if (rangeTable) rangeTable.style.display = 'none';
+    if (filterButton) filterButton.style.display = 'none';
+    if (timeline) timeline.style.display = '';
     
     document.getElementById("bannerButton1").addEventListener("click", function() {
         document.getElementById("avatar").click();
@@ -328,5 +391,83 @@
 window.onload = function() {
     charts.initTimeline(appState, ModuleDependencies["charts"], ModuleDependencies["DOM"]);
 };
+</script>
+<script>
+document.getElementById('minTimelineRangeInput').addEventListener('change', function(event) {
+    let otherValue = document.getElementById('maxTimelineRangeInput').value;
+    if (otherValue === '') {
+        console.warn('Max timeline range input is empty, cannot update map timeline range');
+        otherValue = "?"; // Placeholder value to indicate missing input
+    }
+    appState.mapTimelineRange.input = [event.target.value, otherValue];
+    console.log('minTimelineRangeInput NEW:', appState.mapTimelineRange.input);
+});
+document.getElementById('maxTimelineRangeInput').addEventListener('change', function(event) {
+    let otherValue = document.getElementById('minTimelineRangeInput').value;
+    if (otherValue === '') {
+        console.warn('Min timeline range input is empty, cannot update map timeline range');
+        otherValue = "?"; // Placeholder value to indicate missing input
+    }
+    appState.mapTimelineRange.input = [otherValue, event.target.value];
+        console.log('maxTimelineRangeInput NEW:', appState.mapTimelineRange.input);
+});
+
+document.getElementById('timelineDropdown').addEventListener('change', function(event) {
+    let selectedValue = event.target.value;
+
+    // Get DOM elements
+    const rangeTable = document.querySelector('.rangeTable');
+    const filterButton = document.getElementById('timelineFilterButton');
+    const timeline = document.getElementById('timeline');
+
+    if(selectedValue === "option1"){
+        // Show rangeTable and filterButton, hide timeline
+        if (rangeTable) rangeTable.style.display = 'none';
+        if (filterButton) filterButton.style.display = 'none';
+        if (timeline) timeline.style.display = '';
+    }
+    if(selectedValue === "option2"){
+        // Hide rangeTable and filterButton, show timeline
+        if (rangeTable) rangeTable.style.display = '';
+        if (filterButton) filterButton.style.display = '';
+        if (timeline) timeline.style.display = 'none';
+    }
+});
+document.getElementById('timelineFilterButton').addEventListener('click', function(event) {
+
+}); 
+document.getElementById('timeline12hrInput').addEventListener('change', function(event) {
+    appState.mapTimeline12hrClock = event.target.checked;
+    console.log('Timeline 12hr clock preference changed:', appState.mapTimeline12hrClock);
+        if (appState.mapTimelineRange.slider) {
+            if (appState.mapTimeline12hrClock) {
+                let minDate_slider = new Date(appState.mapTimelineRange.slider[0]);
+                let maxDate_slider = new Date(appState.mapTimelineRange.slider[1]);
+                let minDate_input = new Date(appState.mapTimelineRange.input[0]);
+                let maxDate_input = new Date(appState.mapTimelineRange.input[1]);
+                appState.mapTimelineRange.slider = [basicFunctions.format12hr(minDate_slider), basicFunctions.format12hr(maxDate_slider)];
+                appState.mapTimelineRange.input = [basicFunctions.format12hr(minDate_input), basicFunctions.format12hr(maxDate_input)];
+                console.log('Timeline slider range updated (12hr):', appState.mapTimelineRange);
+            } else {
+                let minDate_slider = new Date(appState.mapTimelineRange.slider[0]);
+                let maxDate_slider = new Date(appState.mapTimelineRange.slider[1]);
+                let minDate_input = new Date(appState.mapTimelineRange.input[0]);
+                let maxDate_input = new Date(appState.mapTimelineRange.input[1]);
+                appState.mapTimelineRange.slider = [basicFunctions.format24hr(minDate_slider), basicFunctions.format24hr(maxDate_slider)];
+                appState.mapTimelineRange.input = [basicFunctions.format24hr(minDate_input), basicFunctions.format24hr(maxDate_input)];
+                console.log('Timeline slider range updated (24hr):', appState.mapTimelineRange);
+            }
+        }
+        const date = new Date(appState.mapTimelineRange.slider[0]);
+        if (isNaN(date.getTime())) {
+            // The date is invalid (e.g., input was '')
+        } else {
+            console.log('Valid date:', date);
+            DOM.leaf_UpdateTimelineHeader(appState, appState.mapTimelineRange.slider[0], appState.mapTimelineRange.slider[1]);
+        }
+    
+});
+
+
 </script>
 </html>

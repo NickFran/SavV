@@ -360,6 +360,7 @@ body {
     box-sizing: border-box;
     padding: 0;
     margin: 0;
+    margin-bottom: 10px;
 }
 
 .timelineWrapper {
@@ -381,18 +382,78 @@ body {
     
 }   
 #maxTimelineRangeLabel{
-    text-align: right;
-    right: 0;
-    top: 16%;
-    margin-right: 20px;
+    width: 100%;
     }
 #minTimelineRangeLabel{
-    text-align: left;
-        left: 0;
-        top: 16%;
-        margin-left: 30px;
+        width: 100%;
     }
 
 #map, .leaflet-container {
     background: #aad3df !important; /* Replace with your desired color */
+}
+
+
+.timelineWrapper{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    position: relative;
+}
+
+.timelineRangeWrapper {
+    justify-content: space-between;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    width: 100%;
+    padding: 0 10px;
+    box-sizing: border-box;
+}
+
+.rangeTable {
+    display: table;
+    width: 90%;
+    border-collapse: collapse;
+    border: 2px solid #333;
+}
+
+.rangeTable th, .rangeTable td {
+    border: 1px solid #333;
+    padding: 6px 10px;
+    text-align: center;
+} .rangeTable input{
+    width: 100%;
+    padding: 5px;
+    box-sizing: border-box;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+.filterButton {
+    margin-top: 10px;
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.timelineOptionWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 8px;
+} .timelineOptionWrapper h4 {
+    margin-right: 10px;
+} .timelineOptionWrapper input {
+    margin-top: 2px;
+    margin-right: 10px;
 }
