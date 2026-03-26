@@ -48,7 +48,7 @@ function userint_ToggleMarkerTimeline(state, dep, event) {
                 let currentCoordPair = latNlon;
 
                 // polyline instance
-                DOM.leaf_addPolyLineToMap(state, currentFileToExpand.fileName, previousCoordPair, currentCoordPair);
+                let polyLineInstance = DOM.leaf_addPolyLineToMap(state, currentFileToExpand.fileName, previousCoordPair, currentCoordPair);
                 
                 // marker instance
                 let instancePopupContent = DOM.leaf_buildPopupContent(currentFileToExpand, instance=coordPair);
@@ -66,16 +66,17 @@ function userint_ToggleMarkerTimeline(state, dep, event) {
                 let c = a - b
                 const days = c / (1000 * 1000 * 1000 * 60 * 60 * 24)
 
-                let timestampInstancesDiff = basicFunctions.getTimestampDifference(a, b, importFormat="ms", returnType=objects.GraphType.h);
+                let timestampInstancesDiff = basicFunctions.getTimestampDifference(a, b, importFormat="ms", returnType=objects.GraphType.d);
                 
-                if (timestampInstancesDiff > 200) { // default to 200 for debugging, 
+                if (timestampInstancesDiff > 5) { // default to 200 for debugging, 
                     state.markers[file].TimestampFlags.TimestampFlagDifferences.push(timestampInstancesDiff);
+                    polyLineInstance.setStyle({ color: 'red' });
                     
                     let instancePopupContent = DOM.leaf_buildPopupContent(currentFileToExpand, instance=true, buttonText=null, manual=`
                         <h4>Under Ice Flag</h4>
-                        <p>This platforms deployment might have gone under ice</p>
+                        <p><span class="cRed bold">This platforms deployment might have gone under ice</span></p>
                         <br>
-                        <p>${timestampInstancesDiff} hours Elapsed between timestamp [${coordPair-1}] (${bform}) and timestamp [${coordPair}] (${aform}).</p>
+                        <p><span class="cRed bold">${Number(timestampInstancesDiff).toFixed(2)}</span> days Elapsed between timestamp <span class="cBlue bold">[${coordPair-1}] (${bform})</span> and timestamp <span class="cBlue bold">[${coordPair}] (${aform})</span>.</p>
                     `);
                     if (
                     typeof latNlon[0] === 'number' && !isNaN(latNlon[0]) &&
@@ -83,7 +84,7 @@ function userint_ToggleMarkerTimeline(state, dep, event) {
                     ) {
                     
                     let InbetweenCoords = basicFunctions.getInbetweenCoords(previousCoordPair, currentCoordPair, .5);
-                    let FlagInstance = DOM.leaf_insertDataMarker(state, ModuleDependencies["DOM"], InbetweenCoords.lat, InbetweenCoords.lon, instancePopupContent, {}, currentFileToExpand.fileName, instance=true, customImage="temppic.png");
+                    let FlagInstance = DOM.leaf_insertDataMarker(state, ModuleDependencies["DOM"], InbetweenCoords.lat, InbetweenCoords.lon, instancePopupContent, {}, currentFileToExpand.fileName, instance=true, customImage="timeFlag.png");
                     //state.markers[file].additionalInstances.UnderIceFlags.push(FlagInstance); 
                     } else {
                     console.error('Invalid coordinates:', latNlon);

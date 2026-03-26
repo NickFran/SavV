@@ -241,7 +241,7 @@ function loadSideBar_Glider(state, deps, onFileSelect) {
  * @returns li element to be appended and displayed in the sidebar list
  */
 function dom_createElm_GliderListItem(state, deps, file, onFileSelect) {
-    const { pathDep, fileHandle, integrations } = deps;
+    const { pathDep, fileHandle, integrations, basicFunctions} = deps;
 
     const li = document.createElement('li'); // create a new element
         li.textContent = file; // set its name to the file name
@@ -252,19 +252,21 @@ function dom_createElm_GliderListItem(state, deps, file, onFileSelect) {
                 console.log("Shift key was held during click - multi-select not implemented yet")
                 state.isMultiSelect = true;
                 state.selectedFiles.add(file);
+                appState.currentFileIndexTarget = Array.from(appState.selectedFiles).indexOf(file);
             } else {
                 console.log("Shift key was not held during click - opening file normally")
                 state.isMultiSelect = false;
                 state.selectedFiles = new Set([file]);
+                appState.currentFileIndexTarget = 0;
             }
 
-            console.log("Selected files:", Array.from(state.selectedFiles));
-            if (state.isMultiSelect){
-                console.log("Multi-select mode is on");
-                // SHOW POPUP FOR MULTI-VIEWING
-            }else{
-                // SHOW NORMALLY
-            }
+            // console.log("Selected files:", Array.from(state.selectedFiles));
+            // if (state.isMultiSelect){
+            //     console.log("Multi-select mode is on");
+            //     // SHOW POPUP FOR MULTI-VIEWING
+            // }else{
+            //     // SHOW NORMALLY
+            // }
 
             // Reset all li backgrounds first
             document.querySelectorAll('.GliderList li').forEach(item => {
@@ -276,6 +278,22 @@ function dom_createElm_GliderListItem(state, deps, file, onFileSelect) {
             
             // Set clicked li background
             li.style.backgroundColor = '#4a90e2';
+
+            const gliderList = document.getElementById('GliderList');
+            if (!gliderList) {
+                console.error('GliderList element not found');
+                return false;
+            }
+
+            // Find all list items in the GliderList
+            const listItems = gliderList.querySelectorAll('li');
+
+            // Find the item with matching textContent and remove it
+            for (const item of listItems) {
+                if (state.selectedFiles.has(item.textContent)) {
+                    item.style.backgroundColor = '#4a90e2';
+                }
+            }
             
             // const thisFilePath = path.join(savedDataPath, file);
             // console.log("Activating file:", thisFilePath);
@@ -285,11 +303,7 @@ function dom_createElm_GliderListItem(state, deps, file, onFileSelect) {
                 onFileSelect(state, deps, file);
             }
 
-            // integrations.callPyFunc('open', [thisFilePath], { timeoutMs: 60000 }).then(result => {
-            //     console.log("Result from loading upon click:", result);
-            // }).catch(error => {
-            //     console.error("Error calling Python function:", error);
-            // });
+            
         })
         // append it as a child to the element
         return li;
@@ -668,6 +682,8 @@ function leaf_addPolyLineToMap(state, file, latlon1, latlon2){
     // poly line instances
     polyline.addTo(state.map);
     state.markers[file].additionalInstances.polyLines.push(polyline);
+
+    return polyline;
 
 }
 

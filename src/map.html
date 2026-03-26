@@ -64,7 +64,8 @@
                 {
                 pathDep,
                 fileHandle,
-                integrations
+                integrations,
+                basicFunctions
                 },
             "FileHandle":
                 {
@@ -202,7 +203,7 @@
                     <ul>
                     </ul>
                 </div>
-                <button class="markerFocusButton dis" id="markerFocusButton">Focus</button>
+                <button class="markerFocusButton" id="markerFocusButton"><img src="./media/crosshair.png" alt="Marker Focus Icon" class="markerFocusIcon" onerror="this.style.display='none'"></button>
             </div>
               <div class="card">
                                  <div id="map"></div>
@@ -468,6 +469,35 @@ document.getElementById('timeline12hrInput').addEventListener('change', function
             console.log('Valid date:', date);
             DOM.leaf_UpdateTimelineHeader(appState, appState.mapTimelineRange.slider[0], appState.mapTimelineRange.slider[1]);
         }
+    
+});
+
+document.getElementById('markerFocusButton').addEventListener('click', function() {
+    if (Array.from(appState.selectedFiles).length === 0){
+        console.warn('No file selected, cannot focus marker');
+        return;
+    } else {
+        let focusedFile = null;
+
+        if(appState.isMultiSelect){
+            focusedFile = Array.from(appState.allFiles)[appState.currentFileIndexTarget];
+        } else {
+            focusedFile = Array.from(appState.selectedFiles)[0];
+        }
+
+        console.log(appState.currentFileIndexTarget);    
+        console.log(focusedFile); 
+
+        focusedEntry = fileHandle.getEntryInSimpleData(focusedFile);
+        focusedEntryCoords = focusedEntry.coords[0];
+        let lat = focusedEntryCoords.lat;
+        let lon = focusedEntryCoords.lon;
+        let zoomLevel = 6;
+        
+        //appState.map.setView([lat, lon], zoomLevel);
+        appState.map.panTo([lat, lon]);
+    }
+
     
 });
 

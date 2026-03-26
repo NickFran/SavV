@@ -87,11 +87,31 @@ function getTimestampDifference(timestamp1, timestamp2, importFormat, returnType
     return result;
 }
 
+function PlatformsMapToFuncsIfNameMatchFound(state, collection, functionName, elseFunction) { // leaving this for now, but this approach doesnt work because the call doesnt have access to item object
+    const gliderList = document.getElementById('GliderList');
+    if (!gliderList) {
+        console.error('GliderList element not found');
+        return false;
+    }
+
+    // Find all list items in the GliderList
+    const listItems = gliderList.querySelectorAll('li');
+
+    // Find the item with matching textContent and remove it
+    for (const item of listItems) {
+        if (collection.has(item.textContent)) {
+            functionName(state);
+        } else {
+            elseFunction(state);
+        }
+    }
+}
+
 module.exports = { 
     clamp, 
     getNextIndex, 
     getInbetweenCoords, 
     format24hr, 
     format12hr, 
-    getTimestampDifference 
+    getTimestampDifference
 };
