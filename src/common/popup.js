@@ -4,7 +4,8 @@
 class popup {
     constructor(init = {}, basics = {}, functionality = {}, options = {}) {
         this.type = init.type;
-        this.parent = init.parent || document.body;
+        this.parent = init.parent || document.body || document.documentElement;
+        this.notificationType = init.notificationType || null; // e.g. "info", "warning", "error"
 
         this.title = basics.title || "Popup Title";
         this.content = basics.content || "<p>Popup Content</p>";
@@ -15,6 +16,8 @@ class popup {
 
         this.isFullscreen = options.isFullscreen || true;
         this.debug = options.debug || false;
+        this.width = options.width || "70%";
+        this.height = options.height || "80%";
 
         this.hasOpened = false;
         this.#init();
@@ -36,6 +39,28 @@ class popup {
         if (this.isFullscreen) {
             popupBox.classList.add("fullscreen");
         }
+        
+        popupBox.style.width = this.width;
+        popupBox.style.height = this.height;
+
+        const icon = document.createElement("span");
+        if(this.notificationType !== null){
+            switch(this.notificationType){
+                case "info":
+                    //icon.style.backgroundColor = "blue";
+                    icon.classList.add("icon", "icon-circle-notif");
+                    break;
+                case "warning":
+                    //icon.style.backgroundColor = "orange";
+                    icon.classList.add("icon", "icon-triangle-caution");
+                    break;
+                case "error":
+                    //icon.style.backgroundColor = "red";
+                    icon.classList.add("icon", "icon-stop-caution");
+                    break;
+            }
+        }
+        
 
         // Create the overlay
         const overlay = document.createElement("div");
@@ -65,6 +90,7 @@ class popup {
         });
 
         // Assemble the tree
+        header.appendChild(icon);
         header.appendChild(title);
         header.appendChild(closeBtn);
         popupBox.appendChild(header);
@@ -110,4 +136,40 @@ const popupTypes = [
     "menu",
 ]
 
-module.exports = popup;
+const notificationTypes = [
+    "info",
+    "warning",
+    "error"
+]
+
+const popupTemplates = {
+    "Spawn_noFilesToFilter": function() {
+        return new popup(
+            {
+                type: "simple",
+                notificationType: "info",
+            },
+            {
+                title: "No Files To Filter",
+                content: "No files available to filter, please import some data first.",
+            },
+            {
+                onClose: function() {
+                    console.log("No files to filter popup closed.");
+                }
+            },
+            {
+                isFullscreen: false,
+                width: "20%",
+                height: "30%"
+
+            }
+        );
+    }
+}
+module.exports = { 
+    popup, 
+    popupTypes, 
+    popupTemplates, 
+    notificationTypes 
+};

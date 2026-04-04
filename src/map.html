@@ -39,7 +39,7 @@
         const basicFunctions = require('./common/basicFunctions.js');
         const charts = require('./common/charts.js');
 
-        const popup = require('./common/popup.js');
+        var popup = require('./common/popup.js');
     </script>
 
     <!-- VARIABLES -->
@@ -122,7 +122,7 @@
             <input class="AddFileButton" type="file" id="avatar" name="avatar" multiple accept=".nc"/></input>
             <button href="#" class="bannerButton" id="bannerButton1">+ Add File</button>
             <button href="#" class="bannerButton" id="DeleteFileButton"><img src="media/trashcan.svg" class="svgIcon"></button>
-            <button href="#" class="bannerButton dis" id="bannerButton3"><img src="media/filemag.svg" class="svgIcon"></button>
+            <button href="#" class="bannerButton dis" id="bannerButton3"><img src="media/fileadd.svg" class="svgIcon"></button>
             <button href="#" class="bannerButton dis" id="bannerButton4"><img src="media/settings.svg" class="svgIcon"></button>
         </div>
     </div>
@@ -188,7 +188,7 @@
                             const customControl = window.L.control({position: 'bottomleft'});
                             customControl.onAdd = function() {
                                 var div = window.L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-                                div.innerHTML = '<span id="leafletMapHeader" style="padding:4px 12px;font-weight:bold;font-size:1em;background:rgba(255,255,255,0.85);border-radius:6px;box-shadow:0 2px 6px #0002;">Leaflet Map Overview</span>';
+                                div.innerHTML = '<span id="leafletMapHeader" style="padding:4px 12px;font-weight:bold;font-size:1em;background:rgba(255,255,255,0.85);border-radius:6px;box-shadow:0 2px 6px #0002;"></span>';
                                 return div;
                             };
                             customControl.addTo(appState.map);
@@ -198,8 +198,16 @@
                                 let platformFilterBtn = window.L.DomUtil.create('button', 'leaflet-bar leaflet-control leaflet-control-custom');
                                 platformFilterBtn.innerHTML = '<img src="./media/filter.svg" alt="Filter Icon" class="filterIcon svgIcon" onerror="this.style.display=\'none\'">';
                                 platformFilterBtn.classList.add('filterIconWrapper');
+                                platformFilterBtn.style.userSelect = 'none';
                                 platformFilterBtn.id = 'platformFilterButton';
                                 platformFilterBtn.addEventListener('click', function() {
+                                    console.log(fileHandle.isSimpleDataEmpty())
+                                    if(fileHandle.isSimpleDataEmpty()){
+                                        const noFilesPopup = popup.popupTemplates.Spawn_noFilesToFilter();
+                                        noFilesPopup.open();
+                                        console.warn('No data available, cannot apply timeline filter');
+                                        return;
+                                    }
                                 mapFilterPopup.open();
                                 });
                                 return platformFilterBtn;
@@ -240,7 +248,7 @@
 </body>
 
 <script>    
-        const mapFilterPopup = new popup(
+        const mapFilterPopup = new popup.popup(
         { type: "simple" },
         { 
             title: "Filter", 
@@ -551,32 +559,7 @@ document.getElementById('timeline12hrInput').addEventListener('change', function
 });
 
 document.getElementById('markerFocusButton').addEventListener('click', function() {
-    if (Array.from(appState.selectedFiles).length === 0){
-        console.warn('No file selected, cannot focus marker');
-        return;
-    } else {
-        let focusedFile = null;
-
-        if(appState.isMultiSelect){
-            focusedFile = Array.from(appState.allFiles)[appState.currentFileIndexTarget];
-        } else {
-            focusedFile = Array.from(appState.selectedFiles)[0];
-        }
-
-        console.log(appState.currentFileIndexTarget);    
-        console.log(focusedFile); 
-
-        focusedEntry = fileHandle.getEntryInSimpleData(focusedFile);
-        focusedEntryCoords = focusedEntry.coords[0];
-        let lat = focusedEntryCoords.lat;
-        let lon = focusedEntryCoords.lon;
-        let zoomLevel = 6;
-        
-        //appState.map.setView([lat, lon], zoomLevel);
-        appState.map.panTo([lat, lon]);
-    }
-
-    
+userInteractions.userint_focusOnMarker(appState);
 });
 </script>
 

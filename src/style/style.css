@@ -41,6 +41,10 @@ body {
 
 }
 
+.mapModeButton,.viewModeButton{
+    user-select: none;
+}
+
 .sidebar p{
     background-color:#6b6b6b ;
     text-align: center;
@@ -144,6 +148,7 @@ body {
     margin: 0 10px;
     cursor:pointer;
     border: 3px solid #0000002c;
+    user-select: none;
 
     
     border: 1px solid #00000031;
@@ -176,6 +181,9 @@ body {
     margin-bottom: 10px;
 }
 */
+.sidebar .wrapper h2{
+    user-select: none;
+}
 
 
 
@@ -514,6 +522,7 @@ body {
     cursor: pointer;
     width: 20%;
     transition: var(--buttonAnim);
+    user-select: none;
 }.markerFocusButton:hover {
     background-color: var(--buttonColorHover);
     box-shadow: #0000002a 0px 4px 4px;

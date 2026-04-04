@@ -96,6 +96,36 @@ function userint_ToggleMarkerTimeline(state, dep, event) {
         }
 }
 
+function userint_focusOnMarker(state) {
+        if (Array.from(state.selectedFiles).length === 0){
+        console.warn('No file selected, cannot focus marker');
+        return;
+    } else {
+        let focusedFile = null;
+
+        if(state.isMultiSelect){
+            focusedFile = Array.from(state.allFiles)[state.currentFileIndexTarget];
+        } else {
+            focusedFile = Array.from(state.selectedFiles)[0];
+        }
+
+        console.log(state.currentFileIndexTarget);    
+        console.log(focusedFile); 
+
+        focusedEntry = fileHandle.getEntryInSimpleData(focusedFile);
+        focusedEntryCoords = focusedEntry.coords[0];
+        let lat = focusedEntryCoords.lat;
+        let lon = focusedEntryCoords.lon;
+        let zoomLevel = 6;
+        
+        //state.map.setView([lat, lon], zoomLevel);
+        state.map.panTo([lat, lon]);
+    }
+
+    
+}
+
 module.exports = {
-    userint_ToggleMarkerTimeline
+    userint_ToggleMarkerTimeline,
+    userint_focusOnMarker
 };

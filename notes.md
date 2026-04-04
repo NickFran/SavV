@@ -7,6 +7,7 @@
   * create a postPopupToPopupBoard() or something that will allow popups to be pushed to a single area, allowing 1 click close on the wrapper to close all popups during a spam.
 
 * Echarts is not utilized locally and is referencing a network resource
+    * THIS LOOKS LIKE ITS BEEN RESLVED BUT DOUBLE CHECK
 
 * Change display info backt to JSON so that objects can be used instead of just simple text
 
@@ -18,7 +19,3 @@
 * GSOJSnP
 
 * input timeline range has slightly different formatting than slider output (inputs are including a T)
-
-
-* map filter has NaNs when you open filter with no markers inported
-    * (I should have envisioned this would cause issues, just show a popup upon clicking if there are no markers imported)

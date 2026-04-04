@@ -6,22 +6,47 @@ function initTimeline(state, deps, DOM_Deps) {
     
         let data = fileHandle.getAllSimpleData();
         let timelinePoints = [];
-        for (const entry of JSON.parse(data)) {
-            timelinePoints.push([entry.timestamps["formatted"][0], 0, entry.fileName]);
+        for (const entry of JSON.parse(data || '[]')) {
+            const firstTimestamp = entry?.timestamps?.formatted?.[0];
+            if (!firstTimestamp) continue;
+            timelinePoints.push([firstTimestamp, 0, entry.fileName]);
         }
         //console.log("Timeline Points:", timelinePoints);
 
-        // Calculate min and max timestamps for xAxis
-        const timestamps = timelinePoints.map(pt => new Date(pt[0]).getTime());
-        const minTimestamp = Math.min(...timestamps);
-        const maxTimestamp = Math.max(...timestamps);
-        // Expand range by 1 month on each side
-        const minDate = new Date(minTimestamp);
-        const maxDate = new Date(maxTimestamp);
-        minDate.setMonth(minDate.getMonth() - 1);
-        maxDate.setMonth(maxDate.getMonth() + 1);
+        // Calculate robust min and max timestamps for xAxis
+        const timestamps = timelinePoints
+            .map(pt => new Date(pt[0]).getTime())
+            .filter(ts => Number.isFinite(ts));
+
+        let minDate, maxDate;
+
+        if (timestamps.length === 0) {
+            // No valid data — fallback to current date ± 1 month
+            minDate = new Date();
+            maxDate = new Date();
+            minDate.setMonth(minDate.getMonth() - 1);
+            maxDate.setMonth(maxDate.getMonth() + 1);
+        } else if (timestamps.length === 1) {
+            // Single entry — center on that point ± 1 month
+            minDate = new Date(timestamps[0]);
+            maxDate = new Date(timestamps[0]);
+            minDate.setMonth(minDate.getMonth() - 1);
+            maxDate.setMonth(maxDate.getMonth() + 1);
+        } else {
+            // Normal case — expand actual range by 1 month each side
+            minDate = new Date(Math.min(...timestamps));
+            maxDate = new Date(Math.max(...timestamps));
+            minDate.setMonth(minDate.getMonth() - 1);
+            maxDate.setMonth(maxDate.getMonth() + 1);
+        }
+
         const extendedMinTimestamp = minDate.getTime();
         const extendedMaxTimestamp = maxDate.getTime();
+
+        // Add invisible boundary points so dataZoom has a proper range
+        // (null y-values won't render but give the slider correct min/max)
+        timelinePoints.unshift([extendedMinTimestamp, null, '']);
+        timelinePoints.push([extendedMaxTimestamp, null, '']);
 
         // Ensure the timeline container has enough height
         const timelineEl = document.getElementById('timeline');
@@ -135,46 +160,6 @@ function initTimeline(state, deps, DOM_Deps) {
                 min: -1,
                 max: 1
             },
-            dataZoom: [
-                {
-                    type: 'slider',
-                    show: true,
-                    xAxisIndex: [0],
-                    start: 0,
-                    end: 100,
-                    backgroundColor: '#e0e0e0',
-                    fillerColor: '#007bff33',
-                    borderColor: '#007bff',
-                    handleStyle: {
-                        color: '#007bff',
-                        borderColor: '#243744'
-                    },
-                    labelFormatter: function(value) {
-                        const date = new Date(value);
-                        const year = date.getFullYear();
-                        const month = String(date.getMonth() + 1).padStart(2, '0');
-                        const day = String(date.getDate()).padStart(2, '0');
-                        let hour = date.getHours();
-                        let min = String(date.getMinutes()).padStart(2, '0');
-                        if (state.mapTimeline12hrClock) {
-                            let ampm = hour >= 12 ? 'PM' : 'AM';
-                            let hour12 = hour % 12;
-                            if (hour12 === 0) hour12 = 12;
-                            hour12 = String(hour12).padStart(2, '0');
-                            return `${year}-${month}-${day} ${hour12}:${min} ${ampm}`;
-                        } else {
-                            hour = String(hour).padStart(2, '0');
-                            return `${year}-${month}-${day} ${hour}:${min}`;
-                        }
-                    }
-                },
-                {
-                    type: 'inside',
-                    xAxisIndex: [0],
-                    start: 0,
-                    end: 100
-                }
-            ],
             dataZoom: [
                 {
                     type: 'slider',

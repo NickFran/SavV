@@ -135,12 +135,33 @@ function getEntryInSimpleData(fileName) {
  * @returns {boolean} - True if simpleData.json is empty, false otherwise.
  */
 function isSimpleDataEmpty() {
-    const fileContent = fs.readFileSync(pathDep.jsonPath, 'utf-8');
-    if (!fileContent.trim()) {
-        //console.error("simpleData.json is empty");
-        return true;
-    } else {
+    try {
+
+        // GET THIS COMPLIANT WITH SRP SOON (move to diff func)
+        // if (!fs.existsSync(pathDep.jsonPath)) {
+        //     return true;
+        // }
+
+        const fileContent = fs.readFileSync(pathDep.jsonPath, 'utf-8');
+
+        // Empty text file
+        if (!fileContent || !fileContent.trim()) {
+            return true;
+        }
+
+        // Treat [] and {} as empty JSON payloads
+        const parsed = JSON.parse(fileContent);
+        if (Array.isArray(parsed)) {
+            return parsed.length === 0;
+        }
+        if (parsed && typeof parsed === 'object') {
+            return Object.keys(parsed).length === 0;
+        }
+
         return false;
+    } catch (error) {
+        console.error("Error checking if simpleData.json is empty:", error);
+        return true;
     }
 }
 
