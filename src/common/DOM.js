@@ -38,10 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-
-
-
-
 /**
  * Displays detailed information about a dataset in the info cards section of the UI.
  * @param {*} state - App state object 
@@ -274,7 +270,9 @@ function dom_createElm_GliderListItem(state, deps, file, onFileSelect) {
             });
 
             // Show the temp class (DELETE button)
-            document.querySelector('.DeleteFileButton').style.display = 'block';
+            //document.querySelector('.DeleteFileButton').style.display = 'block';
+            document.getElementById('DeleteFileButton').style.display = 'block';
+            document.getElementById('DeleteFileButton').style.backgroundColor = '#de5d5d';
             
             // Set clicked li background
             li.style.backgroundColor = '#4a90e2';
@@ -390,6 +388,16 @@ function hideLoadingScreen() {
  */
 function leaf_insertDataMarker(state, dep, lat, lon, popupText = null, markerOptions = {}, fileName = null, instance=null, customImage=null) {
     const {pathDep} = dep;
+    console.log(`
+        Lat: ${lat},
+        Lon: ${lon},
+        PopupText: ${popupText},
+        MarkerOptions: ${JSON.stringify(markerOptions)},
+        FileName: ${fileName},
+        Instance: ${instance},
+        CustomImage: ${customImage}
+        `);
+    
     // Validate coordinates
     if (lat === undefined || lon === undefined || lat === 'N/A' || lon === 'N/A') {
         console.warn('Invalid coordinates provided to insertDataMarker:', { lat, lon });
@@ -539,7 +547,7 @@ function leaf_removeMapMarker(state, fileName, instance=null) {
             state.map.removeLayer(instanceMarker);
 
         }
-        for (let instanceMarker of marker["additionalInstances"].polyLines){
+        for (let instanceMarker of marker.additionalInstances["polyLines"]){
             state.map.removeLayer(instanceMarker);
 
         }
@@ -559,17 +567,21 @@ function leaf_removeMapMarker(state, fileName, instance=null) {
             state.map.removeLayer(marker["marker"]);
         }
         if (marker["isExpanded"]){
-            for (let instanceMarker of marker["expandedInstances"]){ // isnt this a duplicate?
+                    for (let instanceMarker of marker["expandedInstances"]){
             state.map.removeLayer(instanceMarker);
-            }
-            for (let instanceMarker of marker["additionalInstances"]){
+
+        }
+        for (let instanceMarker of marker.additionalInstances["polyLines"]){
             state.map.removeLayer(instanceMarker);
-            }
+
+        }
+        for (let instanceMarker of marker["additionalInstances"].Numbers){
+            state.map.removeLayer(instanceMarker);
         }
         // Delete reference from state
-        delete state.markers[fileName];
+        
     }
-    
+}
     
     return true;
 }

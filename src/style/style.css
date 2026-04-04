@@ -59,7 +59,7 @@ body {
     display: grid;
 
     grid-template-columns: 1.7fr 1fr 1fr 1fr 1fr 1fr 1fr; 
-    grid-template-rows: auto 0fr 0fr 0fr .2fr; 
+    grid-template-rows: auto 0fr 0fr 0fr .01fr; 
     grid-template-areas: 
     "card3     card4 card4 card4 card4 card4 card4"
     "card3     card4 card4 card4 card4 card4 card4"
@@ -132,7 +132,7 @@ body {
     align-items: center;
     margin-left: 5px;
 }.bannerButton{
-    background-color: rgb(167, 167, 167);
+    background-color: var(--buttonColorStatic);
     border-color: #000000;
 
     width: auto;
@@ -144,6 +144,19 @@ body {
     margin: 0 10px;
     cursor:pointer;
     border: 3px solid #0000002c;
+
+    
+    border: 1px solid #00000031;
+}.bannerButton:hover {
+    background-color: var(--buttonColor);
+    box-shadow: #0000002a 0px 4px 4px;
+    border-radius: 10px;
+    transition: var(--buttonAnimHover);
+}.bannerButton:active {
+    background-color: var(--buttonColorActive);
+    box-shadow: #ffffff2a 0px 4px 4px inset;
+    border-radius: 50px;
+    transition: var(--buttonAnimActive);
 }
 .AddFileButton{
     display: none;
@@ -191,6 +204,7 @@ body {
 .card:nth-child(4) {/*Double check this later to make sure map goes in correct card*/
     grid-area: card4;
     background-color: rgba(255, 255, 255, 0.905);
+    width: auto;
 }
 .cardWrapper{
     background-color: rgba(255, 255, 255, 0.905);
@@ -324,11 +338,17 @@ body {
     text-align: center;
     text-decoration: solid;
     color: white;
+    transition: var(--buttonAnim);
 }.arrow:hover {
     background-color: var(--buttonColorHover);
     box-shadow: #0000002a 0px 4px 4px;
     border-radius: 10px;
-    transition: all 0.1s ease-in-out;
+    transition: var(--buttonAnimHover);
+}.arrow:active {
+    background-color: var(--buttonColorActive);
+    box-shadow: #ffffff2a 0px 4px 4px inset;
+    border-radius: 50px;
+    transition: var(--buttonAnimActive);
 }
 
 .backArrow, .forwardArrow {
@@ -406,10 +426,20 @@ body {
     padding: 0;
     margin: 0;
     position: relative;
+    margin-top: 40px;
 }
 
 .timelineRangeWrapper {
     justify-content: space-between;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    width: 100%;
+    padding: 0 10px;
+    box-sizing: border-box;
+}
+.SelectedTimelineRangeWrapper{
+        justify-content: space-between;
     display: flex;
     align-items: center;
     flex-direction: column;
@@ -451,14 +481,14 @@ body {
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    width: 10%;
     transition: all 0.1s ease-in-out;
+    width: 20%;
+    margin-bottom: 40px;
 }.filterButton:hover {
     background-color: var(--buttonColorHover);
     box-shadow: #0000002a 0px 4px 4px;
     border-radius: 20px;
     transition: all 0.1s ease-in-out;
-    width: 12%;
 }
 
 .timelineOptionWrapper {
@@ -466,7 +496,7 @@ body {
     align-items: center;
     justify-content: center;
     width: 100%;
-    margin-bottom: 8px;
+    margin-bottom: 20px;
 } .timelineOptionWrapper h4 {
     margin-right: 10px;
 } .timelineOptionWrapper input {
@@ -483,16 +513,52 @@ body {
     border-radius: 5px;
     cursor: pointer;
     width: 20%;
-    transition: all 0.1s ease-in-out;
+    transition: var(--buttonAnim);
 }.markerFocusButton:hover {
     background-color: var(--buttonColorHover);
     box-shadow: #0000002a 0px 4px 4px;
     border-radius: 20px;
-    transition: all 0.1s ease-in-out;
+    transition: var(--buttonAnimHover);
     width: 25%;
+}
+.markerFocusButton:active {
+    background-color: var(--buttonColorActive);
+    box-shadow: #ffffff2a 0px 4px 4px inset;
+    border-radius: 50px;
+    transition: var(--buttonAnimActive);
+    width: 20%;
 }
 .markerFocusIcon{
     height: 30px;
     width: auto;
     padding: 5px;
+}
+
+
+.svgIcon{
+    margin-top: 2px;
+}
+.filterIcon{
+    height: 20px;
+    width: auto;
+    padding: 5px;
+}
+.filterIconWrapper{
+    background-color: var(--buttonColorStatic);
+    width: 40px;
+    height: 40px;
+    transition: var(--buttonAnim);
+}.filterIconWrapper:hover{
+    background-color: var(--buttonColor);
+    cursor: pointer;
+    box-shadow: #0000002a 0px 4px 4px;
+    border-radius: 10px;
+    transition: var(--buttonAnimHover);
+}
+.filterIconWrapper:active{
+    background-color: var(--buttonColorActive);
+    cursor: pointer;
+    box-shadow: #ffffff2a 0px 4px 4px inset;
+    border-radius: 50px;
+    transition: var(--buttonAnimActive);
 }

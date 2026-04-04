@@ -340,7 +340,7 @@ async function processImportQeue(appState, ModuleDependencies) {
                 const lon = coords[0].lon;
                 console.log(`Creating marker for ${entry.fileName} at lat: ${lat}, lon: ${lon}`);
                 const popupContent = DOM.leaf_buildPopupContent(datasetEntry, instance=false);
-                DOM.leaf_insertDataMarker(appState, lat, lon, popupContent, {}, entry.fileName);
+                DOM.leaf_insertDataMarker(appState, ModuleDependencies["DOM"], lat, lon, popupContent, {}, entry.fileName);
                 console.log(`Marker created for: ${entry.fileName}`);
             } else {
                 console.warn(`No valid coordinates found for ${entry.fileName}, marker not created.`);
@@ -376,6 +376,7 @@ async function processRemoveQeue(appState, dep) {
         deleteEntryInSimpleData(entry.fileName);
         deleteDataFile(entry.fileName);
         appState.selectedFiles.delete(entry.fileName);
+        delete appState.markers[entry.fileName];
         queue.markRemoveQeueEntryDone(entry.fileName);
         console.log(`Remove queue entry done: ${entry.fileName}`);
     }

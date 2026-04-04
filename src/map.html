@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="./style/loading.css">
     <link rel="stylesheet" href="./style/map.css">
     <link rel="stylesheet" href="./style/objects.css">
+    <link rel="stylesheet" href="./style/popup.css">
 
     <script src="./lib/leaflet/leaflet.js"></script>
     <link rel="stylesheet" href="./lib/leaflet/leaflet.css">
@@ -28,7 +29,6 @@
         const fs = require('fs');
 
         const logging = require('./common/logging.js');
-        const timendate = require('./common/timendate.js');
         const unitTest = require('./common/unitTest.js');
         const pathDep = require('./common/pathDep.js');
         const integrations = require('./common/integrations.js');
@@ -38,6 +38,8 @@
         const userInteractions = require('./common/userInteractions.js');
         const basicFunctions = require('./common/basicFunctions.js');
         const charts = require('./common/charts.js');
+
+        const popup = require('./common/popup.js');
     </script>
 
     <!-- VARIABLES -->
@@ -55,7 +57,8 @@
             mapTimelineRange: {
                 slider: [],
                 input: []
-            }
+            },
+            popups: []
         };
         
         // Dependencies object for DOM functions
@@ -94,9 +97,7 @@
    </script>
 
     <!-- FUNCTIONS -->
-     <script>    
-
-     </script>
+     
 </head>
 <body>
     <!-- Loading Screen Overlay -->
@@ -120,9 +121,9 @@
             
             <input class="AddFileButton" type="file" id="avatar" name="avatar" multiple accept=".nc"/></input>
             <button href="#" class="bannerButton" id="bannerButton1">+ Add File</button>
-            <button href="#" class="bannerButton dis" id="bannerButton2">del</button>
-            <button href="#" class="bannerButton dis" id="bannerButton3">icon</button>
-            <button href="#" class="bannerButton dis" id="bannerButton4">O</button>
+            <button href="#" class="bannerButton" id="DeleteFileButton"><img src="media/trashcan.svg" class="svgIcon"></button>
+            <button href="#" class="bannerButton dis" id="bannerButton3"><img src="media/filemag.svg" class="svgIcon"></button>
+            <button href="#" class="bannerButton dis" id="bannerButton4"><img src="media/settings.svg" class="svgIcon"></button>
         </div>
     </div>
 
@@ -139,7 +140,7 @@
                     This text has been defaulted to giberish, this feature is coming soon!
             </details>
             
-            <button id="DeleteFileButton" class="DeleteFileButton">DELETE</button>
+            <!--<button id="DeleteFileButton" class="DeleteFileButton">DELETE</button>    -->
         </div>
     </div>
 
@@ -147,38 +148,10 @@
         <div class="mapPage">        
             <div class="card">
                     
-                    <div class="timelineOptionWrapper">
-                        <h4>Timeline Preference</h4>
-                        <select id="timelineDropdown" class="timelineDropdown">
-                            <option value="option1">Manual Slider</option>
-                            <option value="option2">Manual Input</option>
-                        </select>
-                    </div>
-                    <div class="timelineOptionWrapper">
-                        <input id="timeline12hrInput" class="timelineInput" type="checkbox">Use 12 HR clock (only for slider)</input>
-                    </div>
+
             </div>
             <div class="card">
-                <div class="timelineWrapper">
-                    <table class="rangeTable">
-                        <tr>
-                            <th></th>
-                            <th>Start</th>
-                            <th>End</th>
-                        </tr>
-                        <tr>
-                            <td>Input</td>
-                            <td class="Slider">
-                                <input type="datetime-local" id="minTimelineRangeInput" class="timelineRangeInput" value="00:00">
-                            </td>
-                            <td class="Slider">
-                                <input type="datetime-local" id="maxTimelineRangeInput" class="timelineRangeInput" value="00:00">
-                            </td>
-                        </tr>
-                    </table>
-                    <button class="filterButton" id="timelineFilterButton">Apply Filter</button>
-                    <div class="timeline" id="timeline" style="width: 100%; height: 100%;"></div>
-                </div>
+                
             </div>
             <div class="card">
                 <div class="titleTargetFileWrapper">
@@ -203,45 +176,58 @@
                     <ul>
                     </ul>
                 </div>
-                <button class="markerFocusButton" id="markerFocusButton"><img src="./media/crosshair.png" alt="Marker Focus Icon" class="markerFocusIcon" onerror="this.style.display='none'"></button>
+                <button class="markerFocusButton" id="markerFocusButton"><img src="./media/target.svg" alt="Marker Focus Icon" class="markerFocusIcon svgIcon" onerror="this.style.display='none'"></button>
             </div>
               <div class="card">
-                                 <div id="map"></div>
-                                 <script>
-                                 // Add overlay text as a Leaflet control using the existing map instance
-                                 document.addEventListener('DOMContentLoaded', function() {
-                                     if (window.L && appState && appState.map) {
-                                         // Top right control (existing)
-                                         var customControl = window.L.control({position: 'bottomleft'});
-                                         customControl.onAdd = function() {
-                                             var div = window.L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-                                             div.innerHTML = '<span id="leafletMapHeader" style="padding:4px 12px;font-weight:bold;font-size:1em;background:rgba(255,255,255,0.85);border-radius:6px;box-shadow:0 2px 6px #0002;">Leaflet Map Overview</span>';
-                                             return div;
-                                         };
-                                         customControl.addTo(appState.map);
+                    <div id="map"></div>
+                    <script>
+                    // Add overlay text as a Leaflet control using the existing map instance
+                    document.addEventListener('DOMContentLoaded', function() {
+                        if (window.L && appState && appState.map) {
+                            // Top right control (existing)
+                            const customControl = window.L.control({position: 'bottomleft'});
+                            customControl.onAdd = function() {
+                                var div = window.L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+                                div.innerHTML = '<span id="leafletMapHeader" style="padding:4px 12px;font-weight:bold;font-size:1em;background:rgba(255,255,255,0.85);border-radius:6px;box-shadow:0 2px 6px #0002;">Leaflet Map Overview</span>';
+                                return div;
+                            };
+                            customControl.addTo(appState.map);
 
-                                         // Centered control in map bounding box
-                                         var centerDiv = window.L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-                                         centerDiv.innerHTML = '<span id="MapTimelineFilterHeader" style="padding:4px 18px;font-weight:bold;font-size:1em;background:rgba(255,255,255,0.35);border-radius:6px;box-shadow:0 2px 6px #0002;"></span>';
-                                         centerDiv.style.position = 'absolute';
-                                         centerDiv.style.pointerEvents = 'auto';
-                                         centerDiv.style.zIndex = 1000;
-                                         appState.map.getContainer().appendChild(centerDiv);
+                            const platformFilterControl = window.L.control({position: 'topright'});
+                            platformFilterControl.onAdd = function() {
+                                let platformFilterBtn = window.L.DomUtil.create('button', 'leaflet-bar leaflet-control leaflet-control-custom');
+                                platformFilterBtn.innerHTML = '<img src="./media/filter.svg" alt="Filter Icon" class="filterIcon svgIcon" onerror="this.style.display=\'none\'">';
+                                platformFilterBtn.classList.add('filterIconWrapper');
+                                platformFilterBtn.id = 'platformFilterButton';
+                                platformFilterBtn.addEventListener('click', function() {
+                                mapFilterPopup.open();
+                                });
+                                return platformFilterBtn;
+                            };
+                            platformFilterControl.addTo(appState.map);
 
-                                         window.updateCenterDivPosition = function() {
-                                             var map = appState.map;
-                                             var mapContainer = map.getContainer();
-                                             var mapRect = mapContainer.getBoundingClientRect();
-                                             var divRect = centerDiv.getBoundingClientRect();
-                                             // Center horizontally in map bounding box, 12px from top
-                                             centerDiv.style.left = ((mapRect.width - divRect.width) / 2) + 'px';
-                                             centerDiv.style.top = '12px';
-                                         };
-                                         window.updateCenterDivPosition();
-                                         appState.map.on('move resize zoom', window.updateCenterDivPosition);
-                                     }
-                                 });
-                                 </script>
+                            // Centered control in map bounding box
+                            var centerDiv = window.L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+                            centerDiv.innerHTML = '<span id="MapTimelineFilterHeader" style="padding:4px 18px;font-weight:bold;font-size:1em;background:rgba(255,255,255,0.35);border-radius:6px;box-shadow:0 2px 6px #0002;"></span>';
+                            centerDiv.style.position = 'absolute';
+                            centerDiv.style.pointerEvents = 'auto';
+                            centerDiv.style.zIndex = 1000;
+                            appState.map.getContainer().appendChild(centerDiv);
+
+                            window.updateCenterDivPosition = function() {
+                                var map = appState.map;
+                                var mapContainer = map.getContainer();
+                                var mapRect = mapContainer.getBoundingClientRect();
+                                var divRect = centerDiv.getBoundingClientRect();
+                                // Center horizontally in map bounding box, 12px from top
+                                centerDiv.style.left = ((mapRect.width - divRect.width) / 2) + 'px';
+                                centerDiv.style.top = '12px';
+                            };
+                            window.updateCenterDivPosition();
+                            appState.map.on('move resize zoom', window.updateCenterDivPosition);
+                        }
+                    });
+                    </script>
             </div>
         </div>
         <div class="viewPage">        
@@ -252,6 +238,69 @@
         </div>
     </div>
 </body>
+
+<script>    
+        const mapFilterPopup = new popup(
+        { type: "simple" },
+        { 
+            title: "Filter", 
+            content: `
+                    <div class="timelineOptionWrapper">
+                        <h4>Timeline Preference</h4>
+                        <select id="timelineDropdown" class="timelineDropdown">
+                            <option value="option1">Manual Slider</option>
+                            <option value="option2">Manual Input</option>
+                        </select>
+                    </div>
+                    <div class="timelineOptionWrapper">
+                        <input id="timeline12hrInput" class="timelineInput" type="checkbox">Use 12 HR clock (only for slider)</input>
+                    </div>
+
+                    <div class="timelineWrapper">
+                        <table class="rangeTable">
+                            <tr>
+                                <th></th>
+                                <th>Start</th>
+                                <th>End</th>
+                            </tr>
+                            <tr>
+                                <td>Input</td>
+                                <td class="Slider">
+                                    <input type="datetime-local" id="minTimelineRangeInput" class="timelineRangeInput" value="00:00">
+                                </td>
+                                <td class="Slider">
+                                    <input type="datetime-local" id="maxTimelineRangeInput" class="timelineRangeInput" value="00:00">
+                                </td>
+                            </tr>
+                        </table>
+                        <button class="filterButton" id="timelineFilterButton">Apply Filter</button>
+                        <div class="timeline" id="timeline" style="width: 100%; height: 100%;"></div>
+                    </div>
+
+                    <div class="SelectedTimelineRangeWrapper">
+                    <table class="rangeTable">
+                            <tr>
+                                <th>Start</th>
+                                <th>End</th>
+                            </tr>
+                            <tr>
+                                <td class="Slider">
+                                    <span id="minTimelineRangeLabel">? ? ? ? ? ? ?</span>
+                                </td>
+                                <td class="Slider">
+                                    <span id="maxTimelineRangeLabel">? ? ? ? ? ? ?</span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+            `
+        },
+        {onOpen_FirstTime: function() {
+            charts.initTimeline(appState, ModuleDependencies["charts"], ModuleDependencies["DOM"]);
+        } }
+    );
+     </script>
+
 <script>
     // Initial load
     DOM.loadSideBar_Glider(appState, ModuleDependencies["DOM"], DOM.displayDatasetInfo);
@@ -336,7 +385,8 @@
         DOM.dom_clearElementInnerHTML_UsingString("datasetInfoCardWrapper");
         DOM.dom_clearElementInnerHTML_UsingString('datasetAttrCardWrapper');
         DOM.dom_clearElementInnerHTML_UsingString('datasetVarsCardWrapper');
-        DOM.dom_SetElementInnerHTML_UsingString("dataFileHeader", "(Click on a data file to view)");
+        document.getElementById('titleTargetFile').textContent = `Data`;
+        //DOM.dom_SetElementInnerHTML_UsingString("dataFileHeader", "(Click on a data file to view)");
         DOM.hideLoadingScreen();
 });
 
@@ -389,14 +439,16 @@
     }
     });
 </script>
+
 <script>
 window.onload = function() {
-    charts.initTimeline(appState, ModuleDependencies["charts"], ModuleDependencies["DOM"]);
+    
 };
 </script>
+
 <script>
 document.getElementById('minTimelineRangeInput').addEventListener('change', function(event) {
-    let otherValue = document.getElementById('maxTimelineRangeInput').value;
+    let otherValue = document.getElementById('maxTimelineRangeLabel').value;
     if (otherValue === '') {
         console.warn('Max timeline range input is empty, cannot update map timeline range');
         otherValue = "?"; // Placeholder value to indicate missing input
@@ -436,39 +488,65 @@ document.getElementById('timelineDropdown').addEventListener('change', function(
     }
 });
 document.getElementById('timelineFilterButton').addEventListener('click', function(event) {
+    let minInputValue = document.getElementById('minTimelineRangeInput').value;
+    let maxInputValue = document.getElementById('maxTimelineRangeInput').value;
+    if (appState.mapTimelineRange.input.includes("?") || minInputValue === '' || maxInputValue === '') {
+        console.warn('Cannot apply timeline filter, one or more inputs are empty');
+        return;
+    }
     DOM.leaf_UpdateTimelineHeader(appState, appState.mapTimelineRange.input[0], appState.mapTimelineRange.input[1]);
     DOM.leaf_filterPlatformsByTimeRange(appState, ModuleDependencies["DOM"], appState.mapTimelineRange.input[0], appState.mapTimelineRange.input[1]);
-    
+    document.getElementById('minTimelineRangeLabel').innerText = appState.mapTimelineRange.input[0];
+    document.getElementById('maxTimelineRangeLabel').innerText = appState.mapTimelineRange.input[1];
 }); 
 document.getElementById('timeline12hrInput').addEventListener('change', function(event) {
     appState.mapTimeline12hrClock = event.target.checked;
-    console.log('Timeline 12hr clock preference changed:', appState.mapTimeline12hrClock);
-        if (appState.mapTimelineRange.slider) {
-            if (appState.mapTimeline12hrClock) {
-                let minDate_slider = new Date(appState.mapTimelineRange.slider[0]);
-                let maxDate_slider = new Date(appState.mapTimelineRange.slider[1]);
-                let minDate_input = new Date(appState.mapTimelineRange.input[0]);
-                let maxDate_input = new Date(appState.mapTimelineRange.input[1]);
-                appState.mapTimelineRange.slider = [basicFunctions.format12hr(minDate_slider), basicFunctions.format12hr(maxDate_slider)];
-                appState.mapTimelineRange.input = [basicFunctions.format12hr(minDate_input), basicFunctions.format12hr(maxDate_input)];
-                console.log('Timeline slider range updated (12hr):', appState.mapTimelineRange);
-            } else {
-                let minDate_slider = new Date(appState.mapTimelineRange.slider[0]);
-                let maxDate_slider = new Date(appState.mapTimelineRange.slider[1]);
-                let minDate_input = new Date(appState.mapTimelineRange.input[0]);
-                let maxDate_input = new Date(appState.mapTimelineRange.input[1]);
-                appState.mapTimelineRange.slider = [basicFunctions.format24hr(minDate_slider), basicFunctions.format24hr(maxDate_slider)];
-                appState.mapTimelineRange.input = [basicFunctions.format24hr(minDate_input), basicFunctions.format24hr(maxDate_input)];
-                console.log('Timeline slider range updated (24hr):', appState.mapTimelineRange);
-            }
-        }
-        const date = new Date(appState.mapTimelineRange.slider[0]);
-        if (isNaN(date.getTime())) {
-            // The date is invalid (e.g., input was '')
+    let dropdownValue = document.getElementById('timelineDropdown').value
+    
+    let inputOriginToUse = null;
+    if (dropdownValue === "option1"){
+        inputOriginToUse = appState.mapTimelineRange.slider;
+    } else if (dropdownValue === "option2"){
+        inputOriginToUse = appState.mapTimelineRange.input;
+    }
+    console.log(appState.mapTimeline12hrClock)
+        if (appState.mapTimeline12hrClock) {
+            let minDate_slider = new Date(appState.mapTimelineRange.slider[0]);
+            let maxDate_slider = new Date(appState.mapTimelineRange.slider[1]);
+            let minDate_input = new Date(appState.mapTimelineRange.input[0]);
+            let maxDate_input = new Date(appState.mapTimelineRange.input[1]);
+            appState.mapTimelineRange.slider = [basicFunctions.format12hr(minDate_slider), basicFunctions.format12hr(maxDate_slider)];
+            appState.mapTimelineRange.input = [basicFunctions.format12hr(minDate_input), basicFunctions.format12hr(maxDate_input)];
+            console.log('Timeline slider range updated (12hr):', appState.mapTimelineRange);
         } else {
-            console.log('Valid date:', date);
-            DOM.leaf_UpdateTimelineHeader(appState, appState.mapTimelineRange.slider[0], appState.mapTimelineRange.slider[1]);
+            let minDate_slider = new Date(appState.mapTimelineRange.slider[0]);
+            let maxDate_slider = new Date(appState.mapTimelineRange.slider[1]);
+            let minDate_input = new Date(appState.mapTimelineRange.input[0]);
+            let maxDate_input = new Date(appState.mapTimelineRange.input[1]);
+            appState.mapTimelineRange.slider = [basicFunctions.format24hr(minDate_slider), basicFunctions.format24hr(maxDate_slider)];
+            appState.mapTimelineRange.input = [basicFunctions.format24hr(minDate_input), basicFunctions.format24hr(maxDate_input)];
+            console.log('Timeline slider range updated (24hr):', appState.mapTimelineRange);
         }
+    
+    const date = new Date(inputOriginToUse[0]);
+
+    if (isNaN(date.getTime())) {
+        // The date is invalid (e.g., input was '')
+        console.warn('Invalid date:', inputOriginToUse[0]);
+    } else {
+        let inputOriginToUse = null;
+        if (dropdownValue === "option1"){
+            inputOriginToUse = appState.mapTimelineRange.slider;
+        } else if (dropdownValue === "option2"){
+            inputOriginToUse = appState.mapTimelineRange.input;
+        }
+        console.log('Valid date:', inputOriginToUse[0]);
+
+        document.getElementById('minTimelineRangeLabel').innerText = inputOriginToUse[0];
+        document.getElementById('maxTimelineRangeLabel').innerText = inputOriginToUse[1];
+    
+        DOM.leaf_UpdateTimelineHeader(appState, inputOriginToUse[0], inputOriginToUse[1]);
+    }
     
 });
 
@@ -500,7 +578,12 @@ document.getElementById('markerFocusButton').addEventListener('click', function(
 
     
 });
+</script>
 
+<script>
+    // Example usage of the popup framework
 
+    // Show the popup
+    //mapFilterPopup.open();
 </script>
 </html>

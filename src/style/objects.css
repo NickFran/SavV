@@ -1,6 +1,13 @@
 :root {
+  --buttonColorStatic: rgb(199, 199, 199);
   --buttonColor: #459fff;
   --buttonColorHover: #007bff;
+  --buttonColorActive: #81dbff;
+
+  --buttonAnim: all 0.1s ease-in-out;
+  --buttonAnimHover: all 0.05s ease-in-out;
+  --buttonAnimActive: all 0.01s ease-in-out;
+
 }
 
 

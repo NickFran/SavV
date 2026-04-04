@@ -1,7 +1,5 @@
-const { getTimestamp, format } = require('./timendate.js');
-
 function startLog() {
-    let timestamp = getTimestamp(format)   
+      
 }
 
 function log(msg) {

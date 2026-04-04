@@ -1,4 +1,3 @@
-
 const eCharts = require('../lib/echarts/echarts.js');
 
 function initTimeline(state, deps, DOM_Deps) {
@@ -24,7 +23,12 @@ function initTimeline(state, deps, DOM_Deps) {
         const extendedMinTimestamp = minDate.getTime();
         const extendedMaxTimestamp = maxDate.getTime();
 
-        const chart = echarts.init(document.getElementById('timeline'));
+        // Ensure the timeline container has enough height
+        const timelineEl = document.getElementById('timeline');
+        if (timelineEl) {
+            timelineEl.style.height = '200px'; // Adjust as needed
+        }
+        const chart = echarts.init(timelineEl);
         chart.resize();
         const option = {
             title: {
@@ -53,13 +57,13 @@ function initTimeline(state, deps, DOM_Deps) {
                     return '';
                 }
             },
-                grid: {
-                    left: '5%',
-                    right: '10%',
-                    top: '20%',
-                    bottom: '50%',
-                    containLabel: true
-                },
+            grid: {
+                left: '6%',
+                right: '10%',
+                top: '10%',
+                bottom: '28%', // More space for zoom and labels
+                containLabel: true
+            },
             xAxis: {
                 type: 'time',
                 min: extendedMinTimestamp,
@@ -103,10 +107,10 @@ function initTimeline(state, deps, DOM_Deps) {
                             let hour12 = hour % 12;
                             if (hour12 === 0) hour12 = 12;
                             hour12 = String(hour12).padStart(2, '0');
-                            return `${month}-${day}`;
+                            return `${month}-${day} ${hour12}:${min}`;
                         } else {
                             hour = String(hour).padStart(2, '0');
-                            return `${month}-${day}`;
+                            return `${month}-${day} ${hour}:${min}`;
                         }
                     }
                 },
@@ -251,6 +255,10 @@ function initTimeline(state, deps, DOM_Deps) {
         }
         //document.getElementById('MapTimelineFilterHeader').innerText = `Timeline Range: ${state.mapTimelineRange.slider[0]} - ${state.mapTimelineRange.slider[1]}`;
         DOM.leaf_UpdateTimelineHeader(state, state.mapTimelineRange.slider[0], state.mapTimelineRange.slider[1]);
+        
+        document.getElementById('minTimelineRangeLabel').innerText = state.mapTimelineRange.slider[0];
+        document.getElementById('maxTimelineRangeLabel').innerText = state.mapTimelineRange.slider[1];
+        
         DOM.leaf_filterPlatformsByTimeRange(state, DOM_Deps, state.mapTimelineRange.slider[0], state.mapTimelineRange.slider[1]);
     });
 }
