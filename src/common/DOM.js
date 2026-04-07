@@ -704,6 +704,125 @@ function leaf_UpdateTimelineHeader(state, min, max){
     window.updateCenterDivPosition();
 }
 
+function buildNotificationIcon(iconElement, notificationType){
+    
+    switch (notificationType) {
+        case "info":
+                iconElement.classList.add("icon", "icon-circle-notif");
+                    break;
+                case "warning":
+                    iconElement.classList.add("icon", "icon-triangle-caution");
+                    break;
+                case "error":
+                    iconElement.classList.add("icon", "icon-stop-caution");
+                    break;
+            }
+
+        iconElement.classList.add("small-icon");
+        return iconElement;
+}
+
+function buildNotificationMenuItem(state, params = {}){
+    popupStateObj = state.popups.notificationsMenuPopup;
+    
+    let newItemWrapper = document.createElement('div');
+    newItemWrapper.style.display = 'flex';
+    newItemWrapper.style.alignItems = 'center';
+    newItemWrapper.id = 'NewItemWrapper';
+    
+    let newItem = document.createElement('p');
+    newItem.innerText = params.notificationLabel || "New Notification";
+    newItem.id = 'MenuItemLabel';
+    
+    let newItemIcon = document.createElement('img');
+    buildNotificationIcon(newItemIcon, params.notificationType || "info");
+    newItemIcon.style.marginRight = '8px';
+
+        newItemWrapper.appendChild(newItemIcon);
+        newItemWrapper.appendChild(newItem);
+
+        let itemBorderColor;
+        let itemSeriousnessLevel;
+        switch (params.notificationType) {
+        case "info":
+                itemBorderColor = "rgb(26, 137, 207)";
+                itemSeriousnessLevel = 1;
+                    break;
+                case "warning":
+                    itemBorderColor = "rgb(226, 143, 18)";
+                    itemSeriousnessLevel = 2;
+                    break;
+                case "error":
+                    itemBorderColor = "rgb(207, 26, 26)";
+                    itemSeriousnessLevel = 3;
+                    break;
+            }
+        newItemWrapper.style.borderColor = itemBorderColor;
+        newItemWrapper.style.borderWidth = '1px';
+        newItemWrapper.style.borderStyle = 'solid';
+        newItemWrapper.style.padding = '5px';
+        popupStateObj.addMenuItem(newItemWrapper, function(){
+            popupStateObj.updateContent(`<div class="notificationsContent"><p>${params.content}</p></div>`);
+        },
+        providedItemData = { itemSeriousnessLevel: itemSeriousnessLevel }
+        );
+
+}
+
+function postNotification(state, params = {}){
+    buildNotificationMenuItem(state, params);
+
+    let notificationSeriousness = null;
+    let maxSeriousnessLevel = Math.max(...state.notificationsSeriousnessArray);
+    switch (params.notificationType) {
+        case "info":
+            notificationSeriousness = 1;
+            break;
+        case "warning":
+            notificationSeriousness = 2;
+            break;
+        case "error":
+            notificationSeriousness = 3;
+            break;
+    }
+
+    if (notificationSeriousness > maxSeriousnessLevel){
+        updateNotificationIndicator(state, notificationSeriousness);
+    }
+    state.notificationsSeriousnessArray.push(notificationSeriousness);
+    updateVisibilityOfNotificationIndicator(state);
+
+}
+
+function updateNotificationIndicator(state, seriousness){
+    const notificationIndicator = document.getElementById('notificationIndicator');
+
+    let newColor = '';
+    switch (seriousness) {
+    case 1:
+        newColor = 'rgb(26, 137, 207)';
+        break;
+    case 2:
+        newColor = 'rgb(226, 143, 18)';
+        break;
+    case 3:
+        newColor = 'rgb(207, 26, 26)';
+        break;
+    }
+
+    notificationIndicator.style.backgroundColor = newColor;
+    
+}
+
+function updateVisibilityOfNotificationIndicator(state){
+    const notificationIndicator = document.getElementById('notificationIndicator');
+    if (state.notificationsSeriousnessArray.length > 0){
+        notificationIndicator.style.display = 'block';
+    } else {
+        notificationIndicator.style.display = 'none';
+    }
+}
+
 
 
 module.exports = {
@@ -725,5 +844,10 @@ module.exports = {
     leaf_filterPlatformsByTimeRange,
     leaf_addPolyNumberToMap,
     leaf_UpdateTimelineHeader,
-    leaf_addPolyLineToMap
+    leaf_addPolyLineToMap,
+    buildNotificationMenuItem,
+    postNotification,
+    updateNotificationIndicator,
+    updateVisibilityOfNotificationIndicator
+
 };

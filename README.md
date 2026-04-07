@@ -1,7 +1,7 @@
 # NetSeaDF
-NetSeaDF, a cross-platform desktop application for mapping and data visualization of ARGO float datasets.
+![Main Interface Map Mode](src\media\externalMedia\1.2.0MainInterface.png)
 
-<img width="1901" height="1069" alt="image" src="https://github.com/user-attachments/assets/e092e9f8-19d3-469f-939a-5dd26a4dce5b" />
+NetSeaDF, a cross-platform desktop application for mapping and data visualization of ARGO float datasets.
 
 
 ## Additional information
@@ -15,11 +15,25 @@ Developed during URI GSO's OECI B2OE Program.
 * Viewing graphs of multiple dataset.
 
 
+## User Installation / Setup
+### Step 1, browse the releases page
+- ![Step 1](src\media\externalMedia\step1.png)
 
-## Development Setup
+## Step 2, click on the desired version
+- ![Step 2](src\media\externalMedia\step1.png)
 
+## Step 3, click on the desired file
+- ![Step 3](src\media\externalMedia\step3.png)
+- .exe for Windows
+- .dmg for Mac
+- (Source Code is available as well if desired)
+
+
+
+
+
+## Development Installation / Setup
 ### Prerequisites
-- Python3
 - Node.js and npm
 - Git
 
@@ -27,19 +41,17 @@ Developed during URI GSO's OECI B2OE Program.
 
 1. Clone the repository:
 ```bash
-git clone <https://github.com/NickFran/NetSeaDF.git>
+git clone <your-repo-url>
 cd NetSeaDF
 ```
 
 2. Install dependencies:
 ```bash
 npm install
-pip install -r requirements.txt
 ```
 
 3. Run in development mode:
 ```bash
-(activate venv)
 npm start
 ```
 

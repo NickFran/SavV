@@ -125,7 +125,69 @@ function userint_focusOnMarker(state) {
     
 }
 
+async function userint_deleteFileButton(state, dep) {
+    const dep_userint = dep["userInteractions"];
+    const {DOM, fileHandle, pathDep, basicFunctions} = dep_userint;
+
+    const filesToDelete = Array.from(state.selectedFiles);
+        if (filesToDelete.length === 0) return;
+        console.log(`Delete button clicked, ${filesToDelete.length} file(s) selected`);
+        // Add all selected files to the remove queue
+        queue.addToRemoveQeue(filesToDelete);
+        console.log(`Remove queue populated with ${filesToDelete.length} file(s)`);
+        DOM.showLoadingScreen();
+        await fileHandle.processRemoveQeue(state, dep["queue"]);
+        state.allFiles = fileHandle.listSavedDataFiles(
+            pathDep.resolveToProperDataPath(__dirname, 'savedData'), 
+            '.nc'
+        );
+        console.log('All queued deletions complete');
+        DOM.dom_clearElementInnerHTML_UsingString("datasetInfoCardWrapper");
+        DOM.dom_clearElementInnerHTML_UsingString('datasetAttrCardWrapper');
+        DOM.dom_clearElementInnerHTML_UsingString('datasetVarsCardWrapper');
+        document.getElementById('titleTargetFile').textContent = `Data`;
+        //DOM.dom_SetElementInnerHTML_UsingString("dataFileHeader", "(Click on a data file to view)");
+        DOM.hideLoadingScreen();
+}
+
+function userint_pressBackArrow(state, dep) {
+        const dep_userint = dep["userInteractions"];
+        const {DOM, fileHandle, pathDep, basicFunctions} = dep_userint;
+
+        let nextIndex;
+        console.log("Back arrow clicked");
+        if (Array.from(state.selectedFiles).length === 0) {
+            console.log("No file selected, ignoring back arrow click");
+            return;
+        } else {
+            nextIndex = basicFunctions.getNextIndex(state.currentFileIndexTarget, Array.from(state.selectedFiles).length, 'back');
+            state.currentFileIndexTarget = nextIndex;
+            console.log("Next index:", nextIndex);
+            DOM.displayDatasetInfo(state, dep["DOM"], Array.from(state.selectedFiles)[state.currentFileIndexTarget]);
+        }
+}
+
+function userint_pressForwardArrow(state, dep) {
+        const dep_userint = dep["userInteractions"];
+        const {DOM, fileHandle, pathDep, basicFunctions} = dep_userint;
+
+        let nextIndex;
+        console.log("Forward arrow clicked");
+        if (Array.from(state.selectedFiles).length === 0) {
+            console.log("No file selected, ignoring forward arrow click");
+            return;
+        } else {
+            nextIndex = basicFunctions.getNextIndex(state.currentFileIndexTarget, Array.from(state.selectedFiles).length, 'forward');
+            state.currentFileIndexTarget = nextIndex;
+            console.log("Next index:", nextIndex);
+            DOM.displayDatasetInfo(state, dep["DOM"], Array.from(state.selectedFiles)[state.currentFileIndexTarget]);
+        }    
+}
+
 module.exports = {
     userint_ToggleMarkerTimeline,
-    userint_focusOnMarker
+    userint_focusOnMarker,
+    userint_deleteFileButton,
+    userint_pressBackArrow,
+    userint_pressForwardArrow
 };
