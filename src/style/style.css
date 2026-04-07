@@ -169,6 +169,8 @@ body {
 
 #bannerButton4 {
     margin-left: auto;
+}
+#bannerButton5 {
     margin-right: 15px;
 }
 
@@ -570,4 +572,18 @@ body {
     box-shadow: #ffffff2a 0px 4px 4px inset;
     border-radius: 50px;
     transition: var(--buttonAnimActive);
+}
+
+
+.notificationIndicatorWrapper img{
+    position: relative;
+    top: -30px;
+    right: -15px;
+    width: 15px;
+    height: 15px;
+    background-color: red;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }

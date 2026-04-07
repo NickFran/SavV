@@ -58,7 +58,8 @@
                 slider: [],
                 input: []
             },
-            popups: []
+            popups: {},
+            popupSeriousness: 0
         };
         
         // Dependencies object for DOM functions
@@ -123,7 +124,11 @@
             <button href="#" class="bannerButton" id="bannerButton1">+ Add File</button>
             <button href="#" class="bannerButton" id="DeleteFileButton"><img src="media/trashcan.svg" class="svgIcon"></button>
             <button href="#" class="bannerButton dis" id="bannerButton3"><img src="media/fileadd.svg" class="svgIcon"></button>
-            <button href="#" class="bannerButton dis" id="bannerButton4"><img src="media/settings.svg" class="svgIcon"></button>
+            <button href="#" class="bannerButton" id="bannerButton4">
+                <img src="media/boxmsg.svg" class="svgIcon">
+                <div class="notificationIndicatorWrapper" id="notificationIndicatorWrapper"><img class="notificationIndicator" id="notificationIndicator" src="media/circlecaution.svg" alt="svgIcon"></div>
+            </button>
+            <button href="#" class="bannerButton dis" id="bannerButton5"><img src="media/settings.svg" class="svgIcon"></button>
         </div>
     </div>
 
@@ -248,7 +253,7 @@
 </body>
 
 <script>    
-        const mapFilterPopup = new popup.popup(
+        const mapFilterPopup = new popup.SimplePopup(
         { type: "simple" },
         { 
             title: "Filter", 
@@ -307,6 +312,21 @@
             charts.initTimeline(appState, ModuleDependencies["charts"], ModuleDependencies["DOM"]);
         } }
     );
+
+    const notificationsMenuPopup = new popup.MenuPopup(
+        {  },
+        { 
+            title: "Notifications", 
+            content: `
+                    <div class="notificationsContent">
+                        <p>No new notifications</p>
+                    </div>
+            `
+        }
+    );
+
+    appState.popups.mapFilterPopup = mapFilterPopup;
+    appState.popups.notificationsMenuPopup = notificationsMenuPopup;
      </script>
 
 <script>
@@ -377,52 +397,14 @@
 });
 
     document.getElementById("DeleteFileButton").addEventListener("click", async function() {
-        const filesToDelete = Array.from(appState.selectedFiles);
-        if (filesToDelete.length === 0) return;
-        console.log(`Delete button clicked, ${filesToDelete.length} file(s) selected`);
-        // Add all selected files to the remove queue
-        queue.addToRemoveQeue(filesToDelete);
-        console.log(`Remove queue populated with ${filesToDelete.length} file(s)`);
-        DOM.showLoadingScreen();
-        await fileHandle.processRemoveQeue(appState, ModuleDependencies["queue"]);
-        appState.allFiles = fileHandle.listSavedDataFiles(
-            pathDep.resolveToProperDataPath(__dirname, 'savedData'), 
-            '.nc'
-        );
-        console.log('All queued deletions complete');
-        DOM.dom_clearElementInnerHTML_UsingString("datasetInfoCardWrapper");
-        DOM.dom_clearElementInnerHTML_UsingString('datasetAttrCardWrapper');
-        DOM.dom_clearElementInnerHTML_UsingString('datasetVarsCardWrapper');
-        document.getElementById('titleTargetFile').textContent = `Data`;
-        //DOM.dom_SetElementInnerHTML_UsingString("dataFileHeader", "(Click on a data file to view)");
-        DOM.hideLoadingScreen();
+        userInteractions.userint_deleteFileButton(appState, ModuleDependencies);
 });
 
     document.getElementById("backArrow").addEventListener("click", function() {
-        let nextIndex;
-        console.log("Back arrow clicked");
-        if (Array.from(appState.selectedFiles).length === 0) {
-            console.log("No file selected, ignoring back arrow click");
-            return;
-        } else {
-            nextIndex = basicFunctions.getNextIndex(appState.currentFileIndexTarget, Array.from(appState.selectedFiles).length, 'back');
-            appState.currentFileIndexTarget = nextIndex;
-            console.log("Next index:", nextIndex);
-            DOM.displayDatasetInfo(appState, ModuleDependencies["DOM"], Array.from(appState.selectedFiles)[appState.currentFileIndexTarget]);
-        }
+        userInteractions.userint_pressBackArrow(appState, ModuleDependencies);
     });
     document.getElementById("forwardArrow").addEventListener("click", function() {
-        let nextIndex;
-        console.log("Forward arrow clicked");
-        if (Array.from(appState.selectedFiles).length === 0) {
-            console.log("No file selected, ignoring forward arrow click");
-            return;
-        } else {
-            nextIndex = basicFunctions.getNextIndex(appState.currentFileIndexTarget, Array.from(appState.selectedFiles).length, 'forward');
-            appState.currentFileIndexTarget = nextIndex;
-            console.log("Next index:", nextIndex);
-            DOM.displayDatasetInfo(appState, ModuleDependencies["DOM"], Array.from(appState.selectedFiles)[appState.currentFileIndexTarget]);
-        }       
+        userInteractions.userint_pressForwardArrow(appState, ModuleDependencies);   
     });
 </script>
 
@@ -435,11 +417,13 @@
 
     const data = JSON.parse(fileHandle.getAllSimpleData());
 
-    data.forEach(entry => {
-        console.log("(Map Marker) for:"+ entry.fileName);
-        let x = DOM.leaf_buildPopupContent(entry, instance=false);
-        DOM.leaf_insertDataMarker(appState, ModuleDependencies["DOM"], entry.coords[0]["lat"], entry.coords[0]["lon"], x, {}, entry.fileName);
-    });
+    if (!fileHandle.isSimpleDataEmpty()) {
+        data.forEach(entry => {
+            console.log("(Map Marker) for:"+ entry.fileName);
+            let x = DOM.leaf_buildPopupContent(entry, instance=false);
+            DOM.leaf_insertDataMarker(appState, ModuleDependencies["DOM"], entry.coords[0]["lat"], entry.coords[0]["lon"], x, {}, entry.fileName);
+        });
+    } 
 
     document.addEventListener('click', function(event) {
     if (event.target && event.target.id === 'mapPopupButton') {
@@ -564,9 +548,27 @@ userInteractions.userint_focusOnMarker(appState);
 </script>
 
 <script>
-    // Example usage of the popup framework
+    document.getElementById('bannerButton4').addEventListener('click', function() {
+        notificationsMenuPopup.open();
+        DOM.buildNotificationMenuItem(appState, params={
+            notificationType: 'error',
+            notificationLabel: 'New error',
+            content: 'This is a new notification!'
+        })
+        DOM.buildNotificationMenuItem(appState, params={
+            notificationType: 'warning',
+            notificationLabel: 'New warning',
+            content: 'This is a new notification!'
+        })
+        DOM.buildNotificationMenuItem(appState, params={
+            notificationType: 'info',
+            notificationLabel: 'New info',
+            content: 'This is a new notification!'
+        })
 
-    // Show the popup
-    //mapFilterPopup.open();
+        
+
+
+    });
 </script>
 </html>

@@ -704,6 +704,63 @@ function leaf_UpdateTimelineHeader(state, min, max){
     window.updateCenterDivPosition();
 }
 
+function buildNotificationIcon(iconElement, notificationType){
+    
+    switch (notificationType) {
+        case "info":
+                iconElement.classList.add("icon", "icon-circle-notif");
+                    break;
+                case "warning":
+                    iconElement.classList.add("icon", "icon-triangle-caution");
+                    break;
+                case "error":
+                    iconElement.classList.add("icon", "icon-stop-caution");
+                    break;
+            }
+
+        iconElement.classList.add("small-icon");
+        return iconElement;
+}
+
+function buildNotificationMenuItem(state, params = {}){
+    popupStateObj = state.popups.notificationsMenuPopup;
+
+    let newItemWrapper = document.createElement('div');
+        newItemWrapper.style.display = 'flex';
+        newItemWrapper.style.alignItems = 'center';
+
+        let newItem = document.createElement('p');
+        newItem.innerText = params.notificationLabel || "New Notification";
+
+        let newItemIcon = document.createElement('img');
+        buildNotificationIcon(newItemIcon, params.notificationType || "info");
+        newItemIcon.style.marginRight = '8px';
+
+        newItemWrapper.appendChild(newItemIcon);
+        newItemWrapper.appendChild(newItem);
+
+        let itemBorderColor;
+        switch (params.notificationType) {
+        case "info":
+                itemBorderColor = "rgb(26, 137, 207)";
+                    break;
+                case "warning":
+                    itemBorderColor = "rgb(226, 143, 18)";
+                    break;
+                case "error":
+                    itemBorderColor = "rgb(207, 26, 26)";
+                    break;
+            }
+        newItemWrapper.style.borderColor = itemBorderColor;
+        newItemWrapper.style.borderWidth = '1px';
+        newItemWrapper.style.borderStyle = 'solid';
+        newItemWrapper.style.padding = '5px';
+        popupStateObj.addMenuItem(newItemWrapper, function(){
+            popupStateObj.updateContent(`<div class="notificationsContent"><p>${params.content}</p></div>`);
+        });
+
+}
+
 
 
 module.exports = {
@@ -725,5 +782,7 @@ module.exports = {
     leaf_filterPlatformsByTimeRange,
     leaf_addPolyNumberToMap,
     leaf_UpdateTimelineHeader,
-    leaf_addPolyLineToMap
+    leaf_addPolyLineToMap,
+    buildNotificationMenuItem
+
 };
