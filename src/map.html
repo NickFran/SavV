@@ -39,7 +39,7 @@
         const basicFunctions = require('./common/basicFunctions.js');
         const charts = require('./common/charts.js');
 
-        var popup = require('./common/popup.js');
+        const popup = require('./common/popup.js');
     </script>
 
     <!-- VARIABLES -->
@@ -62,10 +62,11 @@
                 timeline: null
             },
             popups: {},
-            notificationsSeriousnessArray: []
+            notificationsSeriousnessArray: [],
+            currentLog: null
         };
 
-        
+        appState.currentLog = logging.createLogFile(`${basicFunctions.getTimestamp()}.netseadflog`, pathDep.resolveToProperDataPath(__dirname, 'logs'));
 
         
         // Dependencies object for DOM functions
@@ -99,7 +100,12 @@
                 DOM,
                 fileHandle,
                 basicFunctions
-                 }
+                 },
+            "logging":
+                {
+                    popup,
+                    DOM
+                }
         };
    </script>
 
@@ -212,11 +218,24 @@
                                 platformFilterBtn.style.userSelect = 'none';
                                 platformFilterBtn.id = 'platformFilterButton';
                                 platformFilterBtn.addEventListener('click', function() {
-                                    console.log(fileHandle.isSimpleDataEmpty())
                                     if(fileHandle.isSimpleDataEmpty()){
-                                        const noFilesPopup = popup.popupTemplates.Spawn_noFilesToFilter();
-                                        noFilesPopup.open();
-                                        console.warn('No data available, cannot apply timeline filter');
+                                        // const noFilesPopup = popup.popupTemplates.Spawn_noFilesToFilter();
+                                        // noFilesPopup.open();
+                                        // console.warn('No data available, cannot apply timeline filter');
+                                        logging.log(params={
+                                            callerInfo:basicFunctions.getCallerInfo(),
+                                            state:appState,
+                                            dep:ModuleDependencies["logging"],
+                                            msgLabel: `No platforms to Filter`,
+                                            msg: 'No data available, cannot apply filter to platforms if there are no platforms!',
+                                            seriousness: 'info',
+                                            code: '0001',
+                                            class:'UserInt',
+                                            ignoreConsole: false,
+                                            ignorePopup: false,
+                                            ignoreNotification: false,
+                                            ignoreLogging: false
+                                        }) //12:44:44
                                         return;
                                     }
                                 mapFilterPopup.open();
@@ -343,10 +362,9 @@
         },
         {
             onMenuItemAdded: function() {
-                console.log('Menu item added to notifications menu popup');
+                //
             },
             onMenuItemDeleted: function(data) {
-                console.log('Menu item deleted from notifications menu popup with data:', data.itemSeriousnessLevel);
 
                 let idx = appState.notificationsSeriousnessArray.indexOf(data.itemSeriousnessLevel);
                 if (idx !== -1) appState.notificationsSeriousnessArray.splice(idx, 1);
@@ -399,6 +417,16 @@
                     const result = fileHandle.copyFileToSavedDataViaBuffer(Buffer.from(e.target.result), file.name, pathDep.savedDataPath);
                     if (result.success) {
                         console.log("File copied to savedData:", result.destPath);
+                        logging.log(params={
+                            callerInfo:basicFunctions.getCallerInfo(),
+                            msgLabel: `File copied to savedData:`,
+                            msg: result.destPath,
+                            seriousness: 'IO',
+                            code: '0000',
+                            class:'FS',
+                            ignoreConsole: false,
+                            ignoreLogging: false
+                        });
                         queueEntries.push({ fileName: file.name, destPath: destPath });
                     } else {
                         console.error("Error copying file to savedData:", result.error);
@@ -411,7 +439,6 @@
                     if (queueEntries.length === 0) return;
                     // Write all entries to the import queue file
                     queue.addToImportQeue(queueEntries);
-                    console.log(`Import queue populated with ${queueEntries.length} file(s)`);
                     DOM.showLoadingScreen();
                     fileHandle.processImportQeue(appState, ModuleDependencies).then(() => {
                         console.log("All queued imports complete");
@@ -476,20 +503,41 @@ window.onload = function() {
 document.getElementById('minTimelineRangeInput').addEventListener('change', function(event) {
     let otherValue = document.getElementById('maxTimelineRangeLabel').value;
     if (otherValue === '') {
-        console.warn('Max timeline range input is empty, cannot update map timeline range');
         otherValue = "?"; // Placeholder value to indicate missing input
     }
     appState.mapTimelineRange.input = [event.target.value, otherValue];
-    console.log('minTimelineRangeInput NEW:', appState.mapTimelineRange.input);
+    logging.log(params={
+            callerInfo:basicFunctions.getCallerInfo(),
+            state:appState,
+            dep:ModuleDependencies["logging"],
+            msgLabel: `minTimelineRangeInput (new value)`,
+            msg: appState.mapTimelineRange.input,
+            seriousness: 'info',
+            code: '0000',
+            class:'UserInt',
+            ignoreConsole: false,
+            ignoreLogging: false
+        })
 });
 document.getElementById('maxTimelineRangeInput').addEventListener('change', function(event) {
     let otherValue = document.getElementById('minTimelineRangeInput').value;
     if (otherValue === '') {
-        console.warn('Min timeline range input is empty, cannot update map timeline range');
         otherValue = "?"; // Placeholder value to indicate missing input
     }
     appState.mapTimelineRange.input = [otherValue, event.target.value];
-        console.log('maxTimelineRangeInput NEW:', appState.mapTimelineRange.input);
+        logging.log(params={
+            callerInfo:basicFunctions.getCallerInfo(),
+            state:appState,
+            dep:ModuleDependencies["logging"],
+            msgLabel: `maxTimelineRangeInput (new value)`,
+            msg: appState.mapTimelineRange.input,
+            seriousness: 'info',
+            code: '0000',
+            class:'Input',
+            ignoreConsole: false,
+            ignoreLogging: false
+        })
+        
 });
 
 document.getElementById('timelineDropdown').addEventListener('change', function(event) {
@@ -517,7 +565,19 @@ document.getElementById('timelineFilterButton').addEventListener('click', functi
     let minInputValue = document.getElementById('minTimelineRangeInput').value;
     let maxInputValue = document.getElementById('maxTimelineRangeInput').value;
     if (appState.mapTimelineRange.input.includes("?") || minInputValue === '' || maxInputValue === '') {
-        console.warn('Cannot apply timeline filter, one or more inputs are empty');
+        logging.log(params={
+            callerInfo:basicFunctions.getCallerInfo(),
+            state:appState,
+            dep:ModuleDependencies["logging"],
+            msgLabel: `Timeline Filter Unset`,
+            msg: 'Not all required values have been set to filter the timeline!',
+            seriousness: 'warning',
+            code: '0002',
+            class:'UserInt',
+            ignoreConsole: false,
+            ignoreNotification: false,
+            ignoreLogging: false
+        })
         return;
     }
     DOM.leaf_UpdateTimelineHeader(appState, appState.mapTimelineRange.input[0], appState.mapTimelineRange.input[1]);

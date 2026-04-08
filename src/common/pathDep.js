@@ -1,6 +1,8 @@
 const path = require('node:path');
 const { performUnitTest } = require('./unitTest.js');
 const { DisplayError } = require('./logging.js');
+const {log} = require('./logging.js');
+const {getCallerInfo} = require('./basicFunctions.js');
 
 // Takes folder names and converts to hardset ints of the number of sublevels from root.
 const folderSublevelFromRootMap = {
