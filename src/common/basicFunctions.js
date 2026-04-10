@@ -113,6 +113,35 @@ function getNotificationsMaxSeriousness() {
         : 0;
 }
 
+function getTimestamp(params={}) {
+    const now = new Date();
+    let hours = now.getHours();
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    if ("short" in params && params.short){
+        return `${month}-${day} ${hours}:${minutes}:${seconds} ${ampm}`;
+    } else {
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds} ${ampm}`;
+    }
+}
+
+function getCallerInfo() {
+    const stack = new Error().stack.split('\n')[2];
+    const match = stack.match(/\((.+):(\d+):(\d+)\)/) || stack.match(/at (.+):(\d+):(\d+)/);
+    if (match) {
+        const filePath = match[1];
+        const fileName = filePath.split(/[/\\]/).pop();
+        return [fileName, `${match[2]}`];
+    }
+    return { file: 'unknown', path: 'unknown', line: '?', col: '?' };
+}
+
 module.exports = { 
     clamp, 
     getNextIndex, 
@@ -120,5 +149,7 @@ module.exports = {
     format24hr, 
     format12hr, 
     getTimestampDifference,
-    getNotificationsMaxSeriousness
+    getNotificationsMaxSeriousness,
+    getTimestamp,
+    getCallerInfo
 };

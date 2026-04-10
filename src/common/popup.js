@@ -143,6 +143,11 @@ class NotificationPopup extends popup {
             console.error("Header element is not defined. Ensure super.init() is called.");
         }
     }
+
+    close() {
+        super.close();
+        this.delete();
+    }
 }
 
 class MenuPopup extends popup {
