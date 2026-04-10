@@ -17,14 +17,13 @@ Developed during URI GSO's OECI B2OE Program.
 
 ## User Installation / Setup
 ### Step 1, browse the releases page
-- ![Step 1](src/media/externalMedia/step1.png)
+![Step 1](src/media/externalMedia/step1.png)
 
 ## Step 2, click on the desired version
-- ![Step 2](src/media/externalMedia/step2.png)
+![Step 2](src/media/externalMedia/step2.png)
 
 ## Step 3, click on the desired file
-- ![Step 3](src/media/externalMedia/step3.png)
-
+![Step 3](src/media/externalMedia/step3.png)
 - .exe for Windows
 - .dmg for Mac
 - (Source Code is available as well if desired)
