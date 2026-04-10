@@ -1,6 +1,6 @@
 {
   "name": "my-electron-app",
-  "version": "1.0.3",
+  "version": "1.2.0",
   "description": "NetSeaDF - Data Visualization Application",
   "author": "Nick",
   "main": "./src/main.js",

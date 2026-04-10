@@ -35,7 +35,17 @@ function log(params = {}) {
     | ${content.message}`
 
     if (!params.ignoreConsole){
-        console.log(contentArrangement1);
+        switch (params.seriousness) {
+            case "info":
+                console.log(contentArrangement1);
+                break;
+            case "warning":
+                console.warn(contentArrangement1);
+                break;
+            case "error":
+                console.error(contentArrangement1);
+                break;
+            }
     }
     if (!params.ignorePopup){
         let temp = new popup.NotificationPopup(

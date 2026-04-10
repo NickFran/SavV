@@ -221,7 +221,6 @@
                                     if(fileHandle.isSimpleDataEmpty()){
                                         // const noFilesPopup = popup.popupTemplates.Spawn_noFilesToFilter();
                                         // noFilesPopup.open();
-                                        // console.warn('No data available, cannot apply timeline filter');
                                         logging.log(params={
                                             callerInfo:basicFunctions.getCallerInfo(),
                                             state:appState,
@@ -230,7 +229,7 @@
                                             msg: 'No data available, cannot apply filter to platforms if there are no platforms!',
                                             seriousness: 'info',
                                             code: '0001',
-                                            class:'UserInt',
+                                            class:'INPUT',
                                             ignoreConsole: false,
                                             ignorePopup: false,
                                             ignoreNotification: false,
@@ -338,7 +337,20 @@
                 if (appState.charts.timeline) {
                     appState.charts.timeline.resize();
                 } else {
-                    console.warn('Timeline chart not found on popup open');
+                    logging.log(params={
+                        callerInfo:basicFunctions.getCallerInfo(),
+                        state:appState,
+                        dep:ModuleDependencies["logging"],
+                        msgLabel: `Timeline chart not found on popup open`,
+                        msg: `Contact Developer if this error occurs more than once or interferes with app usage.`,
+                        seriousness: 'warning',
+                        code: '0003',
+                        class:'CALC',
+                        ignoreConsole: false,
+                        ignorePopup: false,
+                        ignoreNotification: false,
+                        ignoreLogging: false
+                    });
                 }
 
             }
@@ -416,12 +428,13 @@
                     const destPath = path.join(pathDep.savedDataPath, file.name);
                     const result = fileHandle.copyFileToSavedDataViaBuffer(Buffer.from(e.target.result), file.name, pathDep.savedDataPath);
                     if (result.success) {
-                        console.log("File copied to savedData:", result.destPath);
                         logging.log(params={
+                            state:appState,
+                            dep:ModuleDependencies["logging"],
                             callerInfo:basicFunctions.getCallerInfo(),
                             msgLabel: `File copied to savedData:`,
-                            msg: result.destPath,
-                            seriousness: 'IO',
+                            msg: `Destination: ${pathDep.savedDataPath},File: ${file.name}`,
+                            seriousness: 'info',
                             code: '0000',
                             class:'FS',
                             ignoreConsole: false,
@@ -429,10 +442,36 @@
                         });
                         queueEntries.push({ fileName: file.name, destPath: destPath });
                     } else {
-                        console.error("Error copying file to savedData:", result.error);
+                        logging.log(params={
+                            state:appState,
+                            dep:ModuleDependencies["logging"],
+                            callerInfo:basicFunctions.getCallerInfo(),
+                            msgLabel: `Error copying file to savedData:`,
+                            msg: result.error,
+                            seriousness: 'warning',
+                            code: '0000',
+                            class:'FS',
+                            ignoreConsole: false,
+                            ignoreLogging: false,
+                            ignorePopup: false,
+                            ignoreNotification: false
+                        });
                     }
                 } catch (err) {
-                    console.error("Error saving file:", err);
+                    logging.log(params={
+                            state:appState,
+                            dep:ModuleDependencies["logging"],
+                            callerInfo:basicFunctions.getCallerInfo(),
+                            msgLabel: `Error saving file:`,
+                            msg: err.message,
+                            seriousness: 'warning',
+                            code: '0000',
+                            class:'FS',
+                            ignoreConsole: false,
+                            ignoreLogging: false,
+                            ignorePopup: false,
+                            ignoreNotification: false
+                        });
                 }
                 copiedCount++;
                 if (copiedCount === files.length) {
@@ -441,12 +480,37 @@
                     queue.addToImportQeue(queueEntries);
                     DOM.showLoadingScreen();
                     fileHandle.processImportQeue(appState, ModuleDependencies).then(() => {
-                        console.log("All queued imports complete");
+                        logging.log(params={
+                            state:appState,
+                            dep:ModuleDependencies["logging"],
+                            callerInfo:basicFunctions.getCallerInfo(),
+                            msgLabel: `Imports complete`,
+                            msg: "All queued imports have been successfully processed.",
+                            seriousness: 'info',
+                            code: '0000',
+                            class:'FS',
+                            ignoreConsole: false,
+                            ignoreLogging: false,
+                            ignoreNotification: false, // TODO: This post never completes, probably a async issue.
+                        });
                         DOM.loadSideBar_Glider(appState, ModuleDependencies["DOM"], DOM.displayDatasetInfo);
                         fileInput.value = '';
                         DOM.hideLoadingScreen();
                     }).catch(error => {
-                        console.error("Error processing import queue:", error);
+                        logging.log(params={
+                            state:appState,
+                            dep:ModuleDependencies["logging"],
+                            callerInfo:basicFunctions.getCallerInfo(),
+                            msgLabel: `Error processing import queue:`,
+                            msg: error.message,
+                            seriousness: 'warning',
+                            code: '0000',
+                            class:'FS',
+                            ignoreConsole: false,
+                            ignoreLogging: false,
+                            ignorePopup: false,
+                            ignoreNotification: false
+                        });
                         DOM.hideLoadingScreen();
                         fileInput.value = '';
                     });
@@ -514,7 +578,7 @@ document.getElementById('minTimelineRangeInput').addEventListener('change', func
             msg: appState.mapTimelineRange.input,
             seriousness: 'info',
             code: '0000',
-            class:'UserInt',
+            class:'INPUT',
             ignoreConsole: false,
             ignoreLogging: false
         })
@@ -533,7 +597,7 @@ document.getElementById('maxTimelineRangeInput').addEventListener('change', func
             msg: appState.mapTimelineRange.input,
             seriousness: 'info',
             code: '0000',
-            class:'Input',
+            class:'INPUT',
             ignoreConsole: false,
             ignoreLogging: false
         })
@@ -573,7 +637,7 @@ document.getElementById('timelineFilterButton').addEventListener('click', functi
             msg: 'Not all required values have been set to filter the timeline!',
             seriousness: 'warning',
             code: '0002',
-            class:'UserInt',
+            class:'INPUT',
             ignoreConsole: false,
             ignoreNotification: false,
             ignoreLogging: false
@@ -595,30 +659,50 @@ document.getElementById('timeline12hrInput').addEventListener('change', function
     } else if (dropdownValue === "option2"){
         inputOriginToUse = appState.mapTimelineRange.input;
     }
-    console.log(appState.mapTimeline12hrClock)
-        if (appState.mapTimeline12hrClock) {
-            let minDate_slider = new Date(appState.mapTimelineRange.slider[0]);
-            let maxDate_slider = new Date(appState.mapTimelineRange.slider[1]);
-            let minDate_input = new Date(appState.mapTimelineRange.input[0]);
-            let maxDate_input = new Date(appState.mapTimelineRange.input[1]);
-            appState.mapTimelineRange.slider = [basicFunctions.format12hr(minDate_slider), basicFunctions.format12hr(maxDate_slider)];
-            appState.mapTimelineRange.input = [basicFunctions.format12hr(minDate_input), basicFunctions.format12hr(maxDate_input)];
-            console.log('Timeline slider range updated (12hr):', appState.mapTimelineRange);
-        } else {
-            let minDate_slider = new Date(appState.mapTimelineRange.slider[0]);
-            let maxDate_slider = new Date(appState.mapTimelineRange.slider[1]);
-            let minDate_input = new Date(appState.mapTimelineRange.input[0]);
-            let maxDate_input = new Date(appState.mapTimelineRange.input[1]);
-            appState.mapTimelineRange.slider = [basicFunctions.format24hr(minDate_slider), basicFunctions.format24hr(maxDate_slider)];
-            appState.mapTimelineRange.input = [basicFunctions.format24hr(minDate_input), basicFunctions.format24hr(maxDate_input)];
-            console.log('Timeline slider range updated (24hr):', appState.mapTimelineRange);
-        }
+    logging.log(params={
+        callerInfo:basicFunctions.getCallerInfo(),
+        state:appState,
+        dep:ModuleDependencies["logging"],
+        msgLabel: `12HR Clock Toggled`,
+        msg: `New Value: ${appState.mapTimeline12hrClock}`,
+        seriousness: 'info',
+        code: '0000',
+        class:'INPUT',
+        ignoreConsole: false,
+        ignoreLogging: false
+    });
+    if (appState.mapTimeline12hrClock) {
+        let minDate_slider = new Date(appState.mapTimelineRange.slider[0]);
+        let maxDate_slider = new Date(appState.mapTimelineRange.slider[1]);
+        let minDate_input = new Date(appState.mapTimelineRange.input[0]);
+        let maxDate_input = new Date(appState.mapTimelineRange.input[1]);
+        appState.mapTimelineRange.slider = [basicFunctions.format12hr(minDate_slider), basicFunctions.format12hr(maxDate_slider)];
+        appState.mapTimelineRange.input = [basicFunctions.format12hr(minDate_input), basicFunctions.format12hr(maxDate_input)];
+    } else {
+        let minDate_slider = new Date(appState.mapTimelineRange.slider[0]);
+        let maxDate_slider = new Date(appState.mapTimelineRange.slider[1]);
+        let minDate_input = new Date(appState.mapTimelineRange.input[0]);
+        let maxDate_input = new Date(appState.mapTimelineRange.input[1]);
+        appState.mapTimelineRange.slider = [basicFunctions.format24hr(minDate_slider), basicFunctions.format24hr(maxDate_slider)];
+        appState.mapTimelineRange.input = [basicFunctions.format24hr(minDate_input), basicFunctions.format24hr(maxDate_input)];
+    }
     
     const date = new Date(inputOriginToUse[0]);
 
     if (isNaN(date.getTime())) {
         // The date is invalid (e.g., input was '')
-        console.warn('Invalid date:', inputOriginToUse[0]);
+    logging.log(params={
+        callerInfo:basicFunctions.getCallerInfo(),
+        state:appState,
+        dep:ModuleDependencies["logging"],
+        msgLabel: `NaN date for timeline after 12HR toggle`,
+        msg: `Values: inputOriginToUse[0]: ${inputOriginToUse[0]}.`,
+        seriousness: 'warning',
+        code: '0000',
+        class:'CALC',
+        ignoreConsole: false,
+        ignoreLogging: false
+    });
     } else {
         let inputOriginToUse = null;
         if (dropdownValue === "option1"){
@@ -626,7 +710,18 @@ document.getElementById('timeline12hrInput').addEventListener('change', function
         } else if (dropdownValue === "option2"){
             inputOriginToUse = appState.mapTimelineRange.input;
         }
-        console.log('Valid date:', inputOriginToUse[0]);
+        logging.log(params={
+            callerInfo:basicFunctions.getCallerInfo(),
+            state:appState,
+            dep:ModuleDependencies["logging"],
+            msgLabel: `New Valid Date for timeline after 12HR toggle`,
+            msg: `New Value: ${inputOriginToUse}`,
+            seriousness: 'info',
+            code: '0000',
+            class:'CALC',
+            ignoreConsole: false,
+            ignoreLogging: false
+        });
 
         document.getElementById('minTimelineRangeLabel').innerText = inputOriginToUse[0];
         document.getElementById('maxTimelineRangeLabel').innerText = inputOriginToUse[1];
