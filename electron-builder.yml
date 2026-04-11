@@ -16,6 +16,8 @@ win:
       to: dist/savedData/
     - from: logs/
       to: dist/logs/
+    - from: qeues/
+      to: dist/qeues/
 
 mac:
   target: dmg
@@ -32,6 +34,8 @@ mac:
       to: dist/savedData/
     - from: logs/
       to: dist/logs/
+    - from: qeues/
+      to: dist/qeues/
 
 asarUnpack:
   - src/common/pythonProcess.py
