@@ -21,3 +21,5 @@
 * input timeline range has slightly different formatting than slider output (inputs are including a T)
 
 * add trace stack line numbers for warning notification posts
+
+* windows venv has newer versions for GSW (x.x.21) and cftime (x.x.5), these will need to be downgraded in requirements.txt because mac builds dont exist for them.
