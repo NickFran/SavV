@@ -1,5 +1,6 @@
 # NetSeaDF
 ![Main Interface Map Mode](src/media/externalMedia/1.2.0MainInterface.png)
+<img width="1902" height="1069" alt="image" src="https://github.com/user-attachments/assets/d0a20e31-960c-4a7d-9f16-d46c888f1374" />
 
 NetSeaDF, a cross-platform desktop application for mapping and data visualization of ARGO float datasets.
 
