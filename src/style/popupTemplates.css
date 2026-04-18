@@ -2,26 +2,35 @@
 
 .settingsMenuWrapper {
     padding: 10px;
+    padding-bottom: 20px;
     display: flex;
     flex-direction: row;
     gap: 10px;
     background-color: rgba(0, 0, 0, 0.068);
+    flex: 1;
     height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
 
 .mainContentArea{
     background-color: rgba(0, 0, 0, 0.137);
-    height: 100%;
     flex: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
 }
 .subMenu{
     background-color: rgba(0, 0, 0, 0.144);
-    height:70vh;
     width:30%;
     display: flex;
     flex-direction: column;
     padding: 5px;
+    overflow-y: auto;
 }
 
 
@@ -33,15 +42,17 @@
 }
 .sectionContent{
     background-color: rgb(168, 160, 150);
-    height: 100%;
     flex: 1;
-    overflow-y: scroll;
+    min-height: 0;
+    max-height: calc(80vh - 160px);
+    overflow-y: auto;
 }
 .sectionFooter{
     background-color: rgb(168, 160, 150);
-    height: 20%;
+    padding: 10px;
     display: flex;
     justify-content: right;
+    flex-shrink: 0;
 }
 
 .saveSettingsButton {

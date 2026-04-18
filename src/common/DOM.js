@@ -997,7 +997,7 @@ function dom_constructSettingsMenu(state, deps){
     }
 
 
-    mainContentArea.appendChild(sectionFooter);
+    //mainContentArea.appendChild(sectionFooter);
     //sectionFooter.appendChild(saveSettingsButton);
     console.log("App settings loaded for settings menu:", appSettings);
 
