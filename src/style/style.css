@@ -94,6 +94,20 @@ body {
     "Vcard1 Vcard1     Vcard2 Vcard2 Vcard2 Vcard2 Vcard2";
 }
 
+.viewPage.vcard3-hidden {
+    grid-template-areas:
+    "Vcard4 Vcard4 Vcard4 Vcard4 Vcard4 Vcard4 Vcard4"
+    "Vcard4 Vcard4 Vcard4 Vcard4 Vcard4 Vcard4 Vcard4"
+    "Vcard4 Vcard4 Vcard4 Vcard4 Vcard4 Vcard4 Vcard4"
+
+    "Vcard1 Vcard1 Vcard2 Vcard2 Vcard2 Vcard2 Vcard2"
+    "Vcard1 Vcard1 Vcard2 Vcard2 Vcard2 Vcard2 Vcard2";
+}
+
+.viewPage.vcard3-hidden .Vcard:nth-child(3) {
+    display: none;
+}
+
 
 .card {
     background-color: rgba(255, 255, 255, 0.473);
@@ -234,8 +248,6 @@ body {
 .Vcard:nth-child(3) {
     grid-area: Vcard3;
     display: flex;
-    justify-content: center;
-    align-items: center;
     background-color: rgba(255, 255, 255, 0.905);
     min-width: 250px; /*Min width for small column box (this perfectly works)*/
 }
@@ -618,4 +630,19 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+
+.NewViewButton {
+    background-color: var(--buttonColorStatic);
+    border-color: #000000;
+
+    width: auto;
+    height: 50px;
+}
+
+.imgIcon{
+    height: 20px;
+    width: auto;
+    padding: 2px;
 }

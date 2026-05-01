@@ -1,6 +1,6 @@
+@import url('objects.css');
 /* View page card and form styling */
 .viewPage .Vcard {
-	border-radius: 18px;
 	border: 1px solid rgba(40, 58, 86, 0.12);
 	box-shadow: 0 18px 36px rgba(31, 48, 71, 0.08);
 	overflow: hidden;
@@ -9,12 +9,12 @@
 .viewPage .Vcard:nth-child(4) {
 	justify-content: flex-start;
 	align-items: stretch;
+	position: relative;
 	padding: 28px;
 	background:
 		radial-gradient(circle at top left, rgba(79, 172, 254, 0.18), transparent 36%),
-		linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(174, 186, 197, 0.96));
+		linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(127, 144, 158, 0.96));
 }
-
 .viewPage .Vcard:nth-child(4) h4 {
 	margin-bottom: 20px;
 	color: #15324d;
@@ -31,6 +31,10 @@
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
+		align-self: center;
+	text-align: center;
+	margin-top: auto;
+	margin-bottom: auto;
 }
 
 .viewPage .Vcard:nth-child(4) .inputFormWrapper {
@@ -61,7 +65,7 @@
 	min-width: 0;
 	padding: 12px 14px;
 	border: 1px solid rgba(61, 95, 134, 0.22);
-	border-radius: 10px;
+	border-radius: 5px;
 	box-sizing: border-box;
 	background-color: #fdfefe;
 	color: #17324b;
@@ -110,4 +114,140 @@
 		grid-template-columns: 1fr;
 		gap: 10px;
 	}
+}
+
+
+
+.viewConfigWrapper {
+	display: flex;
+	flex-direction: column;
+	padding: 20px;
+}
+
+.ViewChartInstance {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin-left: 20px;
+	border-left: #000000 1px dashed;
+	padding-top: 20px;
+}
+.instanceOptionWrapper{
+	display: flex;
+	align-items: center;
+}
+.viewConfigOption{
+	cursor: pointer;
+	padding: 6px 12px;
+	border-radius: 10px;
+	background-color: #ffffff;
+	border: #000000 1px solid;
+	color: #000000;
+	font-size: 0.75rem;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	transition: all 0.1s ease-in-out;
+}
+.viewConfigOption:hover{
+	background-color: var(--BColorHover);
+	color: #ffffff;
+}
+.viewConfigOptionActive{
+	background-color: var(--BColorHover);
+	color: #ffffff;
+}
+
+.subOption{
+	margin-left: 50px;
+}
+
+.viewConfigAddSubOption{
+	margin-left: 10px;
+	cursor: pointer;
+	padding: .5px 5px;
+	border-radius: 50%;
+	background-color: #ffffff;
+	border: #0099ff 1px solid;
+	color: #000000;
+	font-size: 1.0rem;
+	font-weight: 500;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	transition: all 0.1s ease-in-out;
+}
+.viewConfigAddSubOption:hover{
+	background-color: var(--BColorHover);
+	color: #ffffff;
+}
+
+.viewConfigRemoveSubOption {
+	margin-left: 10px;
+	cursor: pointer;
+	padding: 2px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	background-color: #ffffff;
+	border: #ff0000 1px solid;
+	color: #000000;
+	font-size: 1rem;
+	font-weight: 200;
+	transition: all 0.1s ease-in-out;
+}
+.viewConfigRemoveSubOption:hover{
+	background-color: var(--BColorHover);
+	color: #ffffff;
+}
+.viewRemoveIcon{
+	width: 14px;
+	height: 14px;
+	object-fit: contain;
+	padding: 2px;
+}
+
+.createViewButton{
+	align-self: center;
+	padding: 12px 24px;
+	border-radius: 8px;
+	background-color: var(--BColor);
+	color: #ffffff;
+	font-size: 1.0rem;
+	font-weight: 500;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	cursor: pointer;
+	transition: all 0.1s ease-in-out;
+	width: 40%;
+}
+
+.viewTitleWrapper{
+	display: flex;
+	flex-direction: row;
+}
+
+.columnToggler {
+	position: absolute;
+	left: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	user-select: none;
+	z-index: 2;
+	background-color: #ffffff;
+	padding: 18px 5px;
+	border-top-right-radius: 20%;
+	border-bottom-right-radius: 20%;
+	border-left: 5px solid rgba(128, 129, 130, 1);
+}
+
+
+.chartContainer{
+	display: flex;
+	flex-direction: column;
+	border-left: #000000 1px dashed;
 }

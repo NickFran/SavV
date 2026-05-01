@@ -1,5 +1,6 @@
 // DOM manipulation functions
 const { time } = require('console');
+const { app } = require('electron');
 const path = require('path');
 const { config } = require('process');
 
@@ -997,7 +998,7 @@ function dom_constructSettingsMenu(state, deps){
     }
 
 
-    //mainContentArea.appendChild(sectionFooter);
+    mainContentArea.appendChild(sectionFooter);
     //sectionFooter.appendChild(saveSettingsButton);
     console.log("App settings loaded for settings menu:", appSettings);
 
@@ -1016,6 +1017,9 @@ function dom_toggleViewport(viewportName) {
 
         document.getElementById('mapPage').style.display = 'grid';
         document.getElementById('viewPage').style.display = 'none';
+
+        document.getElementById('bannerButton3').style.display = 'block';
+        document.getElementById('NewViewButton').style.display = 'none';
     } else if (viewportName == 'view') {
         document.getElementById('mapModeButton').style.backgroundColor = '#ffffff00';
         document.getElementById('viewModeButton').style.backgroundColor = '#007bff';
@@ -1024,9 +1028,204 @@ function dom_toggleViewport(viewportName) {
 
         document.getElementById('mapPage').style.display = 'none';
         document.getElementById('viewPage').style.display = 'grid';
+
+        document.getElementById('bannerButton3').style.display = 'none';
+        document.getElementById('NewViewButton').style.display = 'block';
     }
 }
 
+function dom_toggleViewConfigColumn(appState, forceHidden = null) {
+    const viewPage = document.getElementById('viewPage');
+    if (!viewPage) return;
+
+    const hideColumn = typeof forceHidden === 'boolean'
+        ? forceHidden
+        : !viewPage.classList.contains('vcard3-hidden');
+
+    viewPage.classList.toggle('vcard3-hidden', hideColumn);
+    appState.viewColumnVisible = !appState.viewColumnVisible;
+}
+
+function dom_setVisibilityOfConfigColumn(appState, preferedVisibility = null){
+    if (preferedVisibility == true) {
+        if (appState.viewColumnVisible == false){
+            dom_toggleViewConfigColumn(appState);
+        }
+    } else if (preferedVisibility == false) {
+        if (appState.viewColumnVisible == true){
+            dom_toggleViewConfigColumn(appState);
+        }
+    }
+}
+
+function dom_initNewView(appState, params = {}){
+    let Defaults = {
+                    name: params.name || 'New View',
+                    type: params.type || 'XYZ',
+                    dataSelection: params.dataSelection || 'XYZ',
+                    chartInstances: params.chartInstances || [dom_createChartInstance()]
+                };
+                
+    if (Object.keys(params).length === 0) {
+        appState.currentView = Defaults;
+    } else {        
+        appState.currentView = Object.assign(Defaults, params);
+    }
+    
+}
+
+function dom_createChartInstance(params = {}) {
+    let Defaults = {
+        general: {
+            Name: null,
+            EnableZoom: true
+        },
+        obj:null,
+        axis:{
+            X: createAxisInstance(),
+            Y: createAxisInstance()
+        }
+    }
+
+    if (Object.keys(params).length === 0) {
+        return Defaults;
+    } else {        
+        return Object.assign(Defaults, params);
+    }
+}
+
+function createAxisInstance(params = {}){
+    let Defaults = {
+        AxisSide: "X",
+        Data: null,
+    }
+
+    if (Object.keys(params).length === 0) {
+        return Defaults;
+    } else {
+        return Object.assign(Defaults, params);
+    }
+}
+
+function renderView(appState) {
+    renderCharts(appState);
+    const viewNameElement = document.getElementById('viewName');
+    if (!viewNameElement) return;
+
+    viewNameElement.textContent = appState.currentView?.name || 'TestView';
+    if (!viewName) {
+        console.log("Not Ready!");
+    };
+    viewName.textContent = appState.currentView.name || 'New View';
+}
+
+function renderCharts (appState) {
+    document.getElementById('viewConfigWrapper').innerHTML = '';
+    let viewConfigWrapper = document.getElementById('viewConfigWrapper');
+
+    let viewTitleWrapper = document.createElement('div');
+    viewTitleWrapper.classList.add('viewTitleWrapper');
+    let viewTitle = document.createElement('h4');
+    viewTitle.innerHTML = 'View - <span id="viewName">TestView</span>';
+
+    let viewConfigAddSubOption = document.createElement('button');
+    viewConfigAddSubOption.classList.add('viewConfigAddSubOption');
+    viewConfigAddSubOption.innerHTML = '+';
+    viewConfigAddSubOption.id = 'viewConfigAddSubOption';
+
+    viewConfigAddSubOption.addEventListener('click', function() {
+        console.log("Add suboption clicked");
+        appState.currentView.chartInstances.push(dom_createChartInstance());
+        renderCharts(appState);
+        console.log("Current view after adding chart instance:", appState.currentView);
+    });
+    
+    viewTitleWrapper.appendChild(viewTitle);
+    viewTitleWrapper.appendChild(viewConfigAddSubOption);
+    viewConfigWrapper.appendChild(viewTitleWrapper);
+
+    appState.currentView.chartInstances.forEach((chartInstance, index) => {
+        dom_addChartInstanceToCurrentView(appState, index);
+    });
+}
+
+function dom_addChartInstanceToCurrentView(appState, index, chartParams = {}){
+    let newChartInstance = document.createElement('div');
+    newChartInstance.classList.add('ViewChartInstance');
+
+    // chart
+    let instanceOptionWrapper_chart = document.createElement('div');
+    let instanceOtionWrapper_chart_span = document.createElement('span');
+    let instanceOptionWrapper_chart_name = document.createElement('div');
+    let instanceOptionWrapper_chart_btn = document.createElement('button');
+    instanceOptionWrapper_chart.classList.add('instanceOptionWrapper');
+    instanceOtionWrapper_chart_span.textContent = "-----";
+    instanceOptionWrapper_chart_name.classList.add('viewConfigOption');
+    instanceOptionWrapper_chart_name.textContent = "Chart " + (index + 1);
+    instanceOptionWrapper_chart_btn.classList.add('viewConfigRemoveSubOption');
+    let instanceOptionWrapper_chart_btn_img = document.createElement('img');
+    instanceOptionWrapper_chart_btn_img.src = path.join(pathDep.fromHereToRoot(__dirname), "src", "media", "trashcan.svg");
+    instanceOptionWrapper_chart_btn_img.classList.add('viewRemoveIcon');
+    instanceOptionWrapper_chart_btn.appendChild(instanceOptionWrapper_chart_btn_img);
+
+    instanceOptionWrapper_chart.appendChild(instanceOtionWrapper_chart_span);
+    instanceOptionWrapper_chart.appendChild(instanceOptionWrapper_chart_name);
+    instanceOptionWrapper_chart.appendChild(instanceOptionWrapper_chart_btn);
+    //
+
+    // general
+    let instanceOptionWrapper_general = document.createElement('div');
+    let instanceOtionWrapper_general_span = document.createElement('span');
+    let instanceOptionWrapper_general_name = document.createElement('div');
+    instanceOptionWrapper_general.classList.add('instanceOptionWrapper');
+    instanceOptionWrapper_general.classList.add('subOption');
+    instanceOtionWrapper_general_span.textContent = "└";
+    instanceOptionWrapper_general_name.classList.add('viewConfigOption');
+    instanceOptionWrapper_general_name.textContent = "General";
+
+    instanceOptionWrapper_general.appendChild(instanceOtionWrapper_general_span);
+    instanceOptionWrapper_general.appendChild(instanceOptionWrapper_general_name);
+    //
+
+    // axis
+    let instanceOptionWrapper_axis = document.createElement('div');
+    let instanceOtionWrapper_axis_span = document.createElement('span');
+    let instanceOptionWrapper_axis_name = document.createElement('div');
+    instanceOptionWrapper_axis.classList.add('instanceOptionWrapper');
+    instanceOptionWrapper_axis.classList.add('subOption');
+    instanceOtionWrapper_axis_span.textContent = "└";
+    instanceOptionWrapper_axis_name.classList.add('viewConfigOption');
+    instanceOptionWrapper_axis_name.textContent = "Axis";
+
+    instanceOptionWrapper_axis.appendChild(instanceOtionWrapper_axis_span);
+    instanceOptionWrapper_axis.appendChild(instanceOptionWrapper_axis_name);
+    //
+
+    newChartInstance.appendChild(instanceOptionWrapper_chart);
+    newChartInstance.appendChild(instanceOptionWrapper_general);
+    newChartInstance.appendChild(instanceOptionWrapper_axis);
+
+    instanceOptionWrapper_chart_btn.addEventListener('click', function() {
+        let foundIndex = findChartInstanceIndexByObject(appState, newChartInstance);
+        removeChart(appState, foundIndex);
+    });
+    
+    document.getElementById('viewConfigWrapper').appendChild(newChartInstance);
+    appState.currentView.chartInstances[index].obj = newChartInstance;
+}
+
+function findChartInstanceIndexByObject(appState, object){
+    for (let i = 0; i < appState.currentView.chartInstances.length; i++){
+        if (appState.currentView.chartInstances[i].obj == object){
+            return i;
+        }
+    }
+}
+
+function removeChart(appState, index){
+    appState.currentView.chartInstances.splice(index, 1);
+    renderCharts(appState);
+}
 
 
 module.exports = {
@@ -1054,6 +1253,14 @@ module.exports = {
     updateNotificationIndicator,
     updateVisibilityOfNotificationIndicator,
     dom_constructSettingsMenu,
-    dom_toggleViewport
+    dom_toggleViewport,
+    dom_toggleViewConfigColumn,
+    dom_initNewView,
+    renderView,
+    renderCharts,
+    createAxisInstance,
+    dom_createChartInstance,
+    findChartInstanceIndexByObject,
+    dom_setVisibilityOfConfigColumn
 
 };

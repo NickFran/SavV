@@ -66,7 +66,14 @@
             },
             popups: {},
             notificationsSeriousnessArray: [],
-            currentLog: null
+            currentLog: null,
+            viewColumnVisible: true,
+            currentView: {
+                    name: null,
+                    type: null,
+                    dataSelection: null,
+                    chartInstances: []
+            }
         };
 
         if(config.get('debug', 'enableDebug')){
@@ -141,6 +148,7 @@
             <button href="#" class="bannerButton" id="bannerButton1">+ Add File</button>
             <button href="#" class="bannerButton" id="DeleteFileButton"><img src="media/trashcan.svg" class="svgIcon"></button>
             <button href="#" class="bannerButton dis" id="bannerButton3"><img src="media/fileadd.svg" class="svgIcon"></button>
+            <button href="#" class="bannerButton dis" id="NewViewButton"><img src="media/addchart.webp" class="imgIcon"></button>
             <button href="#" class="bannerButton" id="bannerButton4">
                 <img src="media/boxmsg.svg" class="svgIcon">
                 <div class="notificationIndicatorWrapper" id="notificationIndicatorWrapper"><img class="notificationIndicator" id="notificationIndicator" src="media/circlecaution.svg" alt="svgIcon"></div>
@@ -275,24 +283,49 @@
         <div class="viewPage" id='viewPage'>        
             <div class="Vcard">bottomLeft</div>
             <div class="Vcard">bottomRight</div>
-            <div class="Vcard">L</div>
             <div class="Vcard">
+                <div class="viewConfigWrapper" id="viewConfigWrapper">
+                    <div class="viewTitleWrapper">
+                        <h4>View - <span id="viewName">TestView</span></h4>
+                        <button class="viewConfigAddSubOption" id="viewConfigAddSubOption">+</button>
+                    </div>
+
+                        <div class="ViewChartInstance">
+                            <div class="instanceOptionWrapper">
+                                <span>-----</span>
+                                <div class="viewConfigOption">Chart</div>
+                                <button class="viewConfigRemoveSubOption"><img src="media/trashcan.svg" class="viewRemoveIcon"></button>
+                            </div>
+                            <div class="instanceOptionWrapper subOption">
+                                <span>└</span>
+                                <div class="viewConfigOption">General</div>
+                            </div>
+                            <div class="instanceOptionWrapper subOption">
+                                <span>└</span>
+                                <div class="viewConfigOption">Axis</div>
+                            </div>
+                        </div>
+                        
+                </div>
+            </div>
+            <div class="Vcard">
+                <div class="columnToggler" id="columnToggler">&lt;</div>
                 <h4>New View</h4>
                 <form>
                     <div class="inputFormWrapper">
                         <h5>Name: </h5>
-                        <input type="string" id="testInput" name="testInput" value="Test Input">
+                        <input type="string" id="newViewName" name="newViewName" value="Test Input">
                     </div>
                     <div class="inputFormWrapper">
                         <h5>Type: </h5>
-                        <select name="graphType" id="graphType" required>
+                        <select name="newViewGraphType" id="newViewGraphType" required>
                         <option value="line">Line</option>
                         <option value="bar">Bar</option>
                         </select>
                     </div>
                     <div class="inputFormWrapper">
                         <h5>Data: </h5>
-                        <select name="graphData" id="graphData" required>
+                        <select name="newViewGraphData" id="newViewGraphData" required>
                         <option value="fromMapSelection">Currently Selected</option>
                         <option value="allVisible">All Visible On Map</option>
                         <option value="allHidden">All Hidden On Map</option>
@@ -301,6 +334,7 @@
                         <option value="custom">Custom Selection</option>
                         </select>
                     </div>
+                    <button type="button" class="createViewButton" id="createViewButton">Create View</button>
                 </form>
             </div>
         </div>
@@ -787,6 +821,8 @@ userInteractions.userint_focusOnMarker(appState);
 </script>
 
 <script>
+    DOM.dom_setVisibilityOfConfigColumn(appState, false); // Start with config column hidden
+
     document.getElementById('bannerButton4').addEventListener('click', function() {
         notificationsMenuPopup.open();
     });
@@ -802,7 +838,37 @@ userInteractions.userint_focusOnMarker(appState);
         console.log("clicked")
         DOM.dom_toggleViewport('map');
     })
-    
+
+    document.getElementById('createViewButton').addEventListener('click', function() {
+        DOM.dom_initNewView(appState, {
+            name: document.getElementById('newViewName').value,
+            type: document.getElementById('newViewGraphType').value,
+            dataSelection: document.getElementById('newViewGraphData').value
+        });
+
+        console.log("New View Created:", appState.currentView);
+
+        DOM.renderView(appState);
+
+        DOM.dom_setVisibilityOfConfigColumn(appState, true); 
+    });
+
+    document.getElementById('viewConfigAddSubOption').addEventListener('click', function() {
+        console.log("Add suboption clicked");
+        
+        appState.currentView.chartInstances.push(DOM.dom_createChartInstance());
+        DOM.renderCharts(appState);
+    });
+
+    document.getElementById('columnToggler').addEventListener('click', function() {
+        DOM.dom_toggleViewConfigColumn(appState);
+        if (appState.viewColumnVisible) {
+            document.getElementById('columnToggler').innerText = '<';
+        } else {
+            document.getElementById('columnToggler').innerText = '>';
+        }
+        DOM.renderCharts(appState);
+    });
 
 </script>
 </html>

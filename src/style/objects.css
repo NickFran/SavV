@@ -4,6 +4,13 @@
   --buttonColorHover: #007bff;
   --buttonColorActive: #81dbff;
 
+    --BColor_Static: rgb(255, 255, 255);
+    --BColor: #0b7dda;
+    --BColorHover: rgb(12, 46, 97);
+    --BColorActive: #81dbff;
+
+
+
   --buttonAnim: all 0.1s ease-in-out;
   --buttonAnimHover: all 0.05s ease-in-out;
   --buttonAnimActive: all 0.01s ease-in-out;

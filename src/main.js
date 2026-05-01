@@ -43,6 +43,13 @@ function createWindow() {
                         console.log('Transfer clicked');
                         // Add your transfer logic here
                     }
+                },
+                {
+                    label: 'Import Transferred Data',
+                    click: () => {
+                        console.log('Import clicked');
+                        // Add your import logic here
+                    }
                 }
             ]
         },
