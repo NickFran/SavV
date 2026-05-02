@@ -1173,6 +1173,7 @@ function dom_addChartInstanceToCurrentView(appState, index, chartParams = {}){
     instanceOptionWrapper_chart.appendChild(instanceOptionWrapper_chart_btn);
     //
 
+
     // general
     let instanceOptionWrapper_general = document.createElement('div');
     let instanceOtionWrapper_general_span = document.createElement('span');
@@ -1205,13 +1206,38 @@ function dom_addChartInstanceToCurrentView(appState, index, chartParams = {}){
     newChartInstance.appendChild(instanceOptionWrapper_general);
     newChartInstance.appendChild(instanceOptionWrapper_axis);
 
+    instanceOptionWrapper_chart_name.addEventListener('click', function() {
+        let x = instanceOptionWrapper_chart_name.parentElement.parentElement;
+        console.log(x);
+
+        let found = appState.currentView.chartInstances.find(instance => instance.obj === x);
+
+        let object = found.obj;
+
+        console.log(object);
+
+        onChartInstanceOptionClick(appState, "chart", index);
+    });
+    instanceOptionWrapper_general.addEventListener('click', function() {
+        onChartInstanceOptionClick(appState, "general", index);
+    });
+    instanceOptionWrapper_axis.addEventListener('click', function() {
+        onChartInstanceOptionClick(appState, "axis", index);
+    });
+
     instanceOptionWrapper_chart_btn.addEventListener('click', function() {
+        if (appState.currentView.chartInstances.length <= 1){
+            alert("A view must contain at least one chart instance.");
+            return;
+        }
         let foundIndex = findChartInstanceIndexByObject(appState, newChartInstance);
         removeChart(appState, foundIndex);
     });
     
     document.getElementById('viewConfigWrapper').appendChild(newChartInstance);
     appState.currentView.chartInstances[index].obj = newChartInstance;
+
+    appState.currentView.chartInstances[index].general.Name = appState.currentView.chartInstances[index].general.Name || `Chart ${index + 1}`;
 }
 
 function findChartInstanceIndexByObject(appState, object){
@@ -1225,6 +1251,145 @@ function findChartInstanceIndexByObject(appState, object){
 function removeChart(appState, index){
     appState.currentView.chartInstances.splice(index, 1);
     renderCharts(appState);
+}
+
+function switchViewMenu(menuName){
+    const createNewViewForm = document.getElementById('createNewViewForm');
+    const chartInstanceSettingsMenu = document.getElementById('chartInstanceSettingsMenu');
+    const chartInstanceGeneralSettingsMenu = document.getElementById('chartInstanceGeneralSettingsMenu');
+    const chartInstanceAxisSettingsMenu = document.getElementById('chartInstanceAxisSettingsMenu');
+
+    createNewViewForm.style.display = 'none';
+    chartInstanceSettingsMenu.style.display = 'none';
+    chartInstanceGeneralSettingsMenu.style.display = 'none';
+    chartInstanceAxisSettingsMenu.style.display = 'none';
+
+    switch (menuName) {
+        case "createNewView":
+            createNewViewForm.style.display = 'flex';
+            break;
+        case "chartInstanceSettings":
+            chartInstanceSettingsMenu.style.display = 'block';
+            break;
+        case "chartInstanceGeneralSettings":
+            chartInstanceGeneralSettingsMenu.style.display = 'block';
+            break;
+        case "chartInstanceAxisSettings":
+            chartInstanceAxisSettingsMenu.style.display = 'block';
+            break;
+    }
+
+}
+
+function onChartInstanceOptionClick(appState, optionType, chartInstanceIndex){
+    switch (optionType) {
+        case "chart":
+            DOM.switchViewMenu('chartInstanceSettings');
+            setViewMenuTitle(`Chart Instance ${chartInstanceIndex + 1} Settings`);
+            buildChartInstanceOptionsMenu(appState, optionType, chartInstanceIndex);
+            break;
+        case "general":
+            DOM.switchViewMenu('chartInstanceGeneralSettings');
+            setViewMenuTitle(`Chart Instance ${chartInstanceIndex + 1} General Settings`);
+            buildChartInstanceOptionsMenu(appState, optionType, chartInstanceIndex);
+            break;
+        case "axis":
+            DOM.switchViewMenu('chartInstanceAxisSettings');
+            setViewMenuTitle(`Chart Instance ${chartInstanceIndex + 1} Axis Settings`);
+            buildChartInstanceOptionsMenu(appState, optionType, chartInstanceIndex);
+            break;
+    }
+}
+
+function buildChartInstanceOptionsMenu(appState, optionType, chartInstanceIndex){
+    let menuWrapper = document.createElement('div');
+    menuWrapper.classList.add('chartInstanceOptionsMenuWrapper');
+
+    switch (optionType) {
+        case "chart":
+            document.getElementById('chartInstanceSettingsMenu').innerHTML = '';
+            document.getElementById('chartInstanceSettingsMenu').appendChild(menuWrapper);
+            let currentChart = appState.currentView.chartInstances[chartInstanceIndex];
+            let contentWrapper = document.createElement('div');
+            contentWrapper.classList.add('chartInstanceContentWrapper');
+            menuWrapper.appendChild(contentWrapper);
+            let stringifyedData = JSON.stringify(currentChart, null, 2);
+            let pre = document.createElement('pre');
+            pre.textContent = stringifyedData;
+            pre.style.background = "#f6f8fa";
+            pre.style.padding = "12px";
+            pre.style.borderRadius = "6px";
+            pre.style.fontSize = "0.98em";
+            pre.style.overflowX = "auto";
+            contentWrapper.appendChild(pre);
+            break;
+        case "general":
+            document.getElementById('chartInstanceGeneralSettingsMenu').innerHTML = '';
+            document.getElementById('chartInstanceGeneralSettingsMenu').appendChild(menuWrapper);
+            
+            let generalSettings = appState.currentView.chartInstances[chartInstanceIndex].general;
+            console.log(generalSettings);
+
+            for (let setting in generalSettings){
+                let settingWrapper = document.createElement('div');
+                settingWrapper.classList.add('chartInstanceGeneralSettingWrapper');
+                let settingLabel = document.createElement('label');
+                settingLabel.classList.add('chartInstanceGeneralSettingLabel');
+                settingLabel.textContent = setting;
+                let settingInput = document.createElement('input');
+                settingInput.classList.add('chartInstanceGeneralSettingInput');
+                settingWrapper.appendChild(settingLabel);
+                settingWrapper.appendChild(settingInput);
+                menuWrapper.appendChild(settingWrapper);
+
+                if (typeof generalSettings[setting] === 'boolean') {
+                    settingInput.type = 'checkbox';
+                    settingInput.checked = generalSettings[setting];
+                } else if (typeof generalSettings[setting] === 'string') {
+                    settingInput.type = 'text';
+                    settingInput.value = generalSettings[setting];
+                } else if (typeof generalSettings[setting] === 'number') {
+                    settingInput.type = 'number';
+                    settingInput.value = generalSettings[setting];
+                } else {
+                    settingInput.type = 'text';
+                    settingInput.value = generalSettings[setting];
+                    //console.warn(`Unsupported setting type for ${setting}:`, typeof generalSettings[setting]);
+                }
+
+                if (setting === "Name") {
+                    settingInput.value = generalSettings[setting] || `Chart ${chartInstanceIndex + 1}`;
+                    
+                    settingInput.addEventListener('input', function() {
+                        appState.currentView.chartInstances[chartInstanceIndex].general[setting] = settingInput.value;
+                        appState.currentView.chartInstances[chartInstanceIndex].obj.getElementsByClassName('instanceOptionWrapper')[0].getElementsByClassName('viewConfigOption')[0].textContent = settingInput.value;
+                        console.log(`Updated setting ${setting} to`, settingInput.value);
+                    });
+                    continue; // skip adding another event listener below since it's already added here for the Name setting
+                }
+                
+                settingInput.addEventListener('input', function() {
+                    if (settingInput.type === 'checkbox') {
+                        appState.currentView.chartInstances[chartInstanceIndex].general[setting] = settingInput.checked;
+                    } else {
+                        appState.currentView.chartInstances[chartInstanceIndex].general[setting] = settingInput.value;
+                    }
+                    console.log(`Updated setting ${setting} to`, settingInput.type === 'checkbox' ? settingInput.checked : settingInput.value);
+                });
+            }
+
+            break;
+        case "axis":
+            document.getElementById('chartInstanceAxisSettingsMenu').innerHTML = '';
+            document.getElementById('chartInstanceAxisSettingsMenu').appendChild(menuWrapper);
+            break;
+    }
+
+
+}
+
+function setViewMenuTitle(title){
+    document.getElementById('viewMenuTitle').textContent = title;
 }
 
 
@@ -1261,6 +1426,8 @@ module.exports = {
     createAxisInstance,
     dom_createChartInstance,
     findChartInstanceIndexByObject,
-    dom_setVisibilityOfConfigColumn
+    dom_setVisibilityOfConfigColumn,
+    switchViewMenu,
+    setViewMenuTitle
 
 };

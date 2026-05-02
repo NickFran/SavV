@@ -30,3 +30,5 @@
 * soon we will swap the order of the settings so it goes label | value | input
 
 * debug labels are good, but only needed for sliders.
+
+* onChartInstanceOptionClick in DOM, menu is shown, then menu populated, should prob be other way around.

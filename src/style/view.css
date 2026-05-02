@@ -251,3 +251,77 @@
 	flex-direction: column;
 	border-left: #000000 1px dashed;
 }
+
+
+
+
+
+
+
+/* SETTINGS MENU STYLES */
+
+/* SETTINGS MENU STYLES (modeled after popupTemplates.css) */
+.chartInstanceOptionsMenuWrapper {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 10px 10px 10px 10px;
+	background-color: rgba(0, 0, 0, 0.023);
+	border-radius: 8px;
+	box-sizing: border-box;
+}
+
+
+.chartInstanceGeneralSettingWrapper {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 10px;
+	background-color: rgba(240, 248, 255, 0.753);
+	padding: 5px;
+	margin-bottom: 5px;
+	border-radius: 8px;
+}
+
+
+.chartInstanceGeneralSettingLabel {
+	font-weight: bold;
+	width: 20%;
+	padding: 5px;
+	border: 1px solid #ccc;
+	border-radius: 5px;
+	color: #294867;
+	font-size: 0.98rem;
+	margin: 0;
+}
+
+
+.chartInstanceGeneralSettingInput {
+	color: #333;
+	padding: 2px 6px;
+	height: 28px;
+	border: 1px solid #ccc;
+	border-radius: 5px;
+	background-color: #fff;
+	font-size: 1rem;
+	max-width: 200px;
+	min-width: 0;
+	box-sizing: border-box;
+	outline: none;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+	vertical-align: middle;
+}
+.chartInstanceGeneralSettingInput:focus {
+	border-color: #459fff;
+	box-shadow: 0 0 0 2px rgba(69, 159, 255, 0.13);
+	background-color: #f7fbff;
+}
+.chartInstanceGeneralSettingInput[type="checkbox"] {
+	width: 22px;
+	height: 22px;
+	min-width: 22px;
+	max-width: 22px;
+	margin: 0 0 0 4px;
+	accent-color: #459fff;
+	vertical-align: left;
+}

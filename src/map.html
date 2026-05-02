@@ -148,7 +148,7 @@
             <button href="#" class="bannerButton" id="bannerButton1">+ Add File</button>
             <button href="#" class="bannerButton" id="DeleteFileButton"><img src="media/trashcan.svg" class="svgIcon"></button>
             <button href="#" class="bannerButton dis" id="bannerButton3"><img src="media/fileadd.svg" class="svgIcon"></button>
-            <button href="#" class="bannerButton dis" id="NewViewButton"><img src="media/addchart.webp" class="imgIcon"></button>
+            <button href="#" class="bannerButton" id="NewViewButton"><img src="media/addchart.webp" class="imgIcon"></button>
             <button href="#" class="bannerButton" id="bannerButton4">
                 <img src="media/boxmsg.svg" class="svgIcon">
                 <div class="notificationIndicatorWrapper" id="notificationIndicatorWrapper"><img class="notificationIndicator" id="notificationIndicator" src="media/circlecaution.svg" alt="svgIcon"></div>
@@ -310,8 +310,8 @@
             </div>
             <div class="Vcard">
                 <div class="columnToggler" id="columnToggler">&lt;</div>
-                <h4>New View</h4>
-                <form>
+                <h4 id="viewMenuTitle">New View</h4>
+                <form id="createNewViewForm">
                     <div class="inputFormWrapper">
                         <h5>Name: </h5>
                         <input type="string" id="newViewName" name="newViewName" value="Test Input">
@@ -336,11 +336,22 @@
                     </div>
                     <button type="button" class="createViewButton" id="createViewButton">Create View</button>
                 </form>
+                <div class="chartInstanceSettingsMenu" id="chartInstanceSettingsMenu">123</div>
+                <div class="chartInstanceGeneralSettingsMenu" id="chartInstanceGeneralSettingsMenu"></div>
+                <div class="chartInstanceAxisSettingsMenu" id="chartInstanceAxisSettingsMenu"></div>
             </div>
         </div>
     </div>
 </body>
 
+
+<script>
+    DOM.switchViewMenu('createNewView');
+    //document.getElementById('createNewViewForm').style.display = 'none';
+    // document.getElementById('chartInstanceSettingsMenu').style.display = 'none';
+    // document.getElementById('chartInstanceGeneralSettingsMenu').style.display = 'none';
+    // document.getElementById('chartInstanceAxisSettingsMenu').style.display = 'none';
+</script>
 <script>    
         const mapFilterPopup = new popup.SimplePopup(
         {},
@@ -821,7 +832,7 @@ userInteractions.userint_focusOnMarker(appState);
 </script>
 
 <script>
-    DOM.dom_setVisibilityOfConfigColumn(appState, false); // Start with config column hidden
+    
 
     document.getElementById('bannerButton4').addEventListener('click', function() {
         notificationsMenuPopup.open();
@@ -868,6 +879,12 @@ userInteractions.userint_focusOnMarker(appState);
             document.getElementById('columnToggler').innerText = '>';
         }
         DOM.renderCharts(appState);
+    });
+
+    document.getElementById('NewViewButton').addEventListener('click', function() {
+        DOM.dom_setVisibilityOfConfigColumn(appState, false); // Start with config column hidden
+        DOM.switchViewMenu('createNewView');
+        DOM.setViewMenuTitle('Create New View');
     });
 
 </script>
