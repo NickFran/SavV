@@ -1161,7 +1161,7 @@ function dom_addChartInstanceToCurrentView(appState, index, chartParams = {}){
     instanceOptionWrapper_chart.classList.add('instanceOptionWrapper');
     instanceOtionWrapper_chart_span.textContent = "-----";
     instanceOptionWrapper_chart_name.classList.add('viewConfigOption');
-    instanceOptionWrapper_chart_name.textContent = "Chart " + (index + 1);
+    instanceOptionWrapper_chart_name.textContent = appState.currentView.chartInstances[index].general.Name || "Chart " + (index + 1);
     instanceOptionWrapper_chart_btn.classList.add('viewConfigRemoveSubOption');
     let instanceOptionWrapper_chart_btn_img = document.createElement('img');
     instanceOptionWrapper_chart_btn_img.src = path.join(pathDep.fromHereToRoot(__dirname), "src", "media", "trashcan.svg");
@@ -1382,6 +1382,73 @@ function buildChartInstanceOptionsMenu(appState, optionType, chartInstanceIndex)
         case "axis":
             document.getElementById('chartInstanceAxisSettingsMenu').innerHTML = '';
             document.getElementById('chartInstanceAxisSettingsMenu').appendChild(menuWrapper);
+
+            ['X', 'Y'].forEach(axisKey => {
+                // Header row: arrow + label + select, all inline
+                let axisRow = document.createElement('div');
+                axisRow.style.display = 'flex';
+                axisRow.style.alignItems = 'center';
+                axisRow.style.gap = '8px';
+                axisRow.style.padding = '6px 4px';
+                axisRow.style.cursor = 'pointer';
+                axisRow.style.userSelect = 'none';
+
+                let arrow = document.createElement('span');
+                arrow.textContent = '▶';
+                arrow.style.fontSize = '10px';
+                arrow.style.transition = 'transform 0.2s';
+                arrow.style.flexShrink = '0';
+
+                let label = document.createElement('label');
+                label.textContent = `${axisKey} Axis`;
+                label.style.minWidth = '50px';
+                label.style.cursor = 'pointer';
+
+                let axisSelect = document.createElement('select');
+                axisSelect.style.flex = '1';
+                ['None', 'Temperature', 'Salinity', 'Pressure', 'Depth'].forEach(opt => {
+                    let option = document.createElement('option');
+                    option.value = opt.toLowerCase();
+                    option.textContent = opt;
+                    axisSelect.appendChild(option);
+                });
+                let currentData = appState.currentView.chartInstances[chartInstanceIndex].axis[axisKey].Data;
+                if (currentData) axisSelect.value = currentData;
+                axisSelect.addEventListener('change', function() {
+                    appState.currentView.chartInstances[chartInstanceIndex].axis[axisKey].Data = axisSelect.value;
+                });
+
+                // Expanded content area (hidden by default)
+                let axisContent = document.createElement('div');
+                axisContent.style.display = 'none';
+                axisContent.style.padding = '6px 16px';
+
+                let placeholder = document.createElement('p');
+                placeholder.textContent = `${axisKey} Axis — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.`;
+                placeholder.style.margin = '0';
+                placeholder.style.fontSize = '0.9em';
+                placeholder.style.color = '#666';
+                axisContent.appendChild(placeholder);
+
+                // Stop select clicks from toggling the row
+                axisSelect.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+
+                // Single toggle listener on the whole row
+                axisRow.addEventListener('click', function() {
+                    const isOpen = axisContent.style.display !== 'none';
+                    axisContent.style.display = isOpen ? 'none' : 'block';
+                    arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
+                });
+
+                axisRow.appendChild(arrow);
+                axisRow.appendChild(label);
+                axisRow.appendChild(axisSelect);
+
+                menuWrapper.appendChild(axisRow);
+                menuWrapper.appendChild(axisContent);
+            });
             break;
     }
 
@@ -1390,6 +1457,30 @@ function buildChartInstanceOptionsMenu(appState, optionType, chartInstanceIndex)
 
 function setViewMenuTitle(title){
     document.getElementById('viewMenuTitle').textContent = title;
+}
+
+function constructVieDataViaPreferences(appState, viewPreferences){
+
+    switch (viewPreferences) {
+        case "fromMapSelection":
+            // Construct view data based on currently selected items on the map
+            break;
+        case "allVisible":
+            // Construct view data based on all visible items on the map
+            break;
+        case "allHidden":
+            // Construct view data based on all hidden items on the map
+            break;
+        case "allWithNotes":
+            // Construct view data based on all items with notes on the map
+            break;
+        case "all":
+            // Construct view data based on all items on the map
+            break;
+        case "custom":
+            // Construct view data based on a custom selection of items on the map
+            break;
+    }
 }
 
 
@@ -1428,6 +1519,7 @@ module.exports = {
     findChartInstanceIndexByObject,
     dom_setVisibilityOfConfigColumn,
     switchViewMenu,
-    setViewMenuTitle
+    setViewMenuTitle,
+    constructVieDataViaPreferences
 
 };

@@ -857,7 +857,10 @@ userInteractions.userint_focusOnMarker(appState);
             dataSelection: document.getElementById('newViewGraphData').value
         });
 
+        DOM.constructVieDataViaPreferences(appState, document.getElementById('newViewGraphData').value);
+
         console.log("New View Created:", appState.currentView);
+        console.log(appState);
 
         DOM.renderView(appState);
 
