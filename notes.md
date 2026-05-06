@@ -32,3 +32,9 @@
 * debug labels are good, but only needed for sliders.
 
 * onChartInstanceOptionClick in DOM, menu is shown, then menu populated, should prob be other way around.
+
+* delete view file while view is being used?
+
+* manual time range, close, reopen, change to slider...
+
+* check map.html for path.join, instead look into using fromHereToRoot()

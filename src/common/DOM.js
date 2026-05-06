@@ -1,5 +1,6 @@
 // DOM manipulation functions
 const { time } = require('console');
+const { dependencies } = require('echarts');
 const { app } = require('electron');
 const path = require('path');
 const { config } = require('process');
@@ -417,8 +418,8 @@ function leaf_insertDataMarker(state, dep, lat, lon, popupText = null, markerOpt
         });
     } else {
         gliderIcon = L.icon({
-                iconUrl: path.join(pathDep.fromHereToRoot(__dirname), "src", "media", "GliderIcon.png"),
-                iconSize: [50, 50],
+                iconUrl: path.join(pathDep.fromHereToRoot(__dirname), "src", "media", "ArgoFloatIcon.png"),
+                iconSize: [60, 60],
                 // iconAnchor: [16, 32],
                 // popupAnchor: [0, -32]
         });
@@ -1059,11 +1060,31 @@ function dom_setVisibilityOfConfigColumn(appState, preferedVisibility = null){
 }
 
 function dom_initNewView(appState, params = {}){
+    let defaultVars = ["--SSP--"];
+    params.vars.push(...defaultVars);
     let Defaults = {
                     name: params.name || 'New View',
                     type: params.type || 'XYZ',
                     dataSelection: params.dataSelection || 'XYZ',
-                    chartInstances: params.chartInstances || [dom_createChartInstance()]
+                    vars: null,
+                    chartInstances: params.chartInstances || [dom_createChartInstance({
+                                                                    general: {
+                                                                        Name: null,
+                                                                        EnableZoom: true
+                                                                    },
+                                                                    obj:null,
+                                                                    axis:[
+                                                                        createAxisInstance({
+                                                                            AxisSide: "Y",
+                                                                            Data: params.vars[0]
+                                                                        }),
+                                                                        createAxisInstance({
+                                                                            AxisSide: "X",
+                                                                            Data: params.vars[0]
+                                                                        })
+                                                                    ]
+                                                                })
+                                                            ]
                 };
                 
     if (Object.keys(params).length === 0) {
@@ -1071,7 +1092,11 @@ function dom_initNewView(appState, params = {}){
     } else {        
         appState.currentView = Object.assign(Defaults, params);
     }
-    
+
+    let plotOutputWrapper = document.createElement('div');
+    plotOutputWrapper.id = 'plotOutputWrapper';
+    plotOutputWrapper.classList.add('plotOutputWrapper');
+    document.getElementById('viewOutputMenu').appendChild(plotOutputWrapper); // we need to append a child to the menu to make sure it shows up when we click on the output option in the view config. This is a bit of a hack but it works for now. We can look to refactor this later.
 }
 
 function dom_createChartInstance(params = {}) {
@@ -1081,10 +1106,16 @@ function dom_createChartInstance(params = {}) {
             EnableZoom: true
         },
         obj:null,
-        axis:{
-            X: createAxisInstance(),
-            Y: createAxisInstance()
-        }
+        axis:[
+            createAxisInstance({
+                AxisSide: "Y",
+                Data: null
+            }),
+            createAxisInstance({
+                AxisSide: "X",
+                Data: null
+            })
+        ]
     }
 
     if (Object.keys(params).length === 0) {
@@ -1107,8 +1138,8 @@ function createAxisInstance(params = {}){
     }
 }
 
-function renderView(appState) {
-    renderCharts(appState);
+function renderView(appState, deps) {
+    renderCharts(appState, deps);
     const viewNameElement = document.getElementById('viewName');
     if (!viewNameElement) return;
 
@@ -1117,16 +1148,22 @@ function renderView(appState) {
         console.log("Not Ready!");
     };
     viewName.textContent = appState.currentView.name || 'New View';
+
 }
 
-function renderCharts (appState) {
+function renderCharts (appState, deps) {
     document.getElementById('viewConfigWrapper').innerHTML = '';
     let viewConfigWrapper = document.getElementById('viewConfigWrapper');
+    
+    let viewChartInstanceWrapper = document.createElement('div');
+    viewChartInstanceWrapper.id = 'viewChartInstanceWrapper';
+    viewChartInstanceWrapper.classList.add('viewChartInstanceWrapper');
+    viewConfigWrapper.appendChild(viewChartInstanceWrapper);
 
     let viewTitleWrapper = document.createElement('div');
     viewTitleWrapper.classList.add('viewTitleWrapper');
     let viewTitle = document.createElement('h4');
-    viewTitle.innerHTML = 'View - <span id="viewName">TestView</span>';
+    viewTitle.innerHTML = appState.currentView?.name || 'TestView';
 
     let viewConfigAddSubOption = document.createElement('button');
     viewConfigAddSubOption.classList.add('viewConfigAddSubOption');
@@ -1136,20 +1173,57 @@ function renderCharts (appState) {
     viewConfigAddSubOption.addEventListener('click', function() {
         console.log("Add suboption clicked");
         appState.currentView.chartInstances.push(dom_createChartInstance());
-        renderCharts(appState);
+        renderCharts(appState, deps);
         console.log("Current view after adding chart instance:", appState.currentView);
     });
     
     viewTitleWrapper.appendChild(viewTitle);
     viewTitleWrapper.appendChild(viewConfigAddSubOption);
-    viewConfigWrapper.appendChild(viewTitleWrapper);
+    viewChartInstanceWrapper.appendChild(viewTitleWrapper);
 
     appState.currentView.chartInstances.forEach((chartInstance, index) => {
-        dom_addChartInstanceToCurrentView(appState, index);
+        dom_addChartInstanceToCurrentView(appState, deps, index);
     });
+
+    // GENERATE
+    let generateViewButton = document.createElement('button');
+    generateViewButton.classList.add('generateViewButton');
+    generateViewButton.textContent = 'Generate View';
+    viewConfigWrapper.appendChild(generateViewButton);
+    generateViewButton.addEventListener('click', function() {
+        appState.isViewGenerated = true;
+        renderCharts(appState, deps);
+        console.log(appState.currentView);
+    })
+
+    // OUTPUT
+    let viewOutputWrapper = document.createElement('div');
+    viewOutputWrapper.id = 'viewOutputWrapper';
+    viewOutputWrapper.classList.add('viewOutputWrapper');
+    viewOutputWrapper.classList.add('instanceOptionWrapper');
+    viewConfigWrapper.appendChild(viewOutputWrapper);
+    let viewOutputSpan = document.createElement('span');
+    viewOutputSpan.textContent = "--------------";
+    viewOutputWrapper.appendChild(viewOutputSpan);
+
+    let viewOutput = document.createElement('h3');
+    viewOutput.textContent = "Output";
+    viewOutput.classList.add('viewOutput');
+    viewOutput.classList.add('viewConfigOption');
+    viewOutputWrapper.appendChild(viewOutput);
+
+    viewOutput.addEventListener('click', function() {
+        onChartInstanceOptionClick(appState, deps, "output", -1);
+    });
+
+    if (appState.isViewGenerated) {
+        viewOutputWrapper.style.display = 'flex';
+    } else {        
+        viewOutputWrapper.style.display = 'none';
+    }
 }
 
-function dom_addChartInstanceToCurrentView(appState, index, chartParams = {}){
+function dom_addChartInstanceToCurrentView(appState, deps, index, chartParams = {}){
     let newChartInstance = document.createElement('div');
     newChartInstance.classList.add('ViewChartInstance');
 
@@ -1216,13 +1290,13 @@ function dom_addChartInstanceToCurrentView(appState, index, chartParams = {}){
 
         console.log(object);
 
-        onChartInstanceOptionClick(appState, "chart", index);
+        onChartInstanceOptionClick(appState, deps, "chart", index);
     });
     instanceOptionWrapper_general.addEventListener('click', function() {
-        onChartInstanceOptionClick(appState, "general", index);
+        onChartInstanceOptionClick(appState, deps, "general", index);
     });
     instanceOptionWrapper_axis.addEventListener('click', function() {
-        onChartInstanceOptionClick(appState, "axis", index);
+        onChartInstanceOptionClick(appState, deps, "axis", index);
     });
 
     instanceOptionWrapper_chart_btn.addEventListener('click', function() {
@@ -1231,10 +1305,10 @@ function dom_addChartInstanceToCurrentView(appState, index, chartParams = {}){
             return;
         }
         let foundIndex = findChartInstanceIndexByObject(appState, newChartInstance);
-        removeChart(appState, foundIndex);
+        removeChart(appState, deps, foundIndex);
     });
     
-    document.getElementById('viewConfigWrapper').appendChild(newChartInstance);
+    document.getElementById('viewChartInstanceWrapper').appendChild(newChartInstance);
     appState.currentView.chartInstances[index].obj = newChartInstance;
 
     appState.currentView.chartInstances[index].general.Name = appState.currentView.chartInstances[index].general.Name || `Chart ${index + 1}`;
@@ -1248,9 +1322,9 @@ function findChartInstanceIndexByObject(appState, object){
     }
 }
 
-function removeChart(appState, index){
+function removeChart(appState, deps, index){
     appState.currentView.chartInstances.splice(index, 1);
-    renderCharts(appState);
+    renderCharts(appState, deps);
 }
 
 function switchViewMenu(menuName){
@@ -1258,11 +1332,18 @@ function switchViewMenu(menuName){
     const chartInstanceSettingsMenu = document.getElementById('chartInstanceSettingsMenu');
     const chartInstanceGeneralSettingsMenu = document.getElementById('chartInstanceGeneralSettingsMenu');
     const chartInstanceAxisSettingsMenu = document.getElementById('chartInstanceAxisSettingsMenu');
+    const viewOutputMenu = document.getElementById('viewOutputMenu');
+
+    if (!createNewViewForm || !chartInstanceSettingsMenu || !chartInstanceGeneralSettingsMenu || !chartInstanceAxisSettingsMenu || !viewOutputMenu) {
+        console.warn('switchViewMenu: one or more menu elements not found in DOM');
+        return;
+    }
 
     createNewViewForm.style.display = 'none';
     chartInstanceSettingsMenu.style.display = 'none';
     chartInstanceGeneralSettingsMenu.style.display = 'none';
     chartInstanceAxisSettingsMenu.style.display = 'none';
+    viewOutputMenu.style.display = 'none';
 
     switch (menuName) {
         case "createNewView":
@@ -1277,31 +1358,39 @@ function switchViewMenu(menuName){
         case "chartInstanceAxisSettings":
             chartInstanceAxisSettingsMenu.style.display = 'block';
             break;
+        case "viewOutput":
+            viewOutputMenu.style.display = 'block';
+            break;
     }
 
 }
 
-function onChartInstanceOptionClick(appState, optionType, chartInstanceIndex){
+function onChartInstanceOptionClick(appState, deps, optionType, chartInstanceIndex){
     switch (optionType) {
         case "chart":
             DOM.switchViewMenu('chartInstanceSettings');
             setViewMenuTitle(`Chart Instance ${chartInstanceIndex + 1} Settings`);
-            buildChartInstanceOptionsMenu(appState, optionType, chartInstanceIndex);
+            buildChartInstanceOptionsMenu(appState, deps, optionType, chartInstanceIndex);
             break;
         case "general":
             DOM.switchViewMenu('chartInstanceGeneralSettings');
             setViewMenuTitle(`Chart Instance ${chartInstanceIndex + 1} General Settings`);
-            buildChartInstanceOptionsMenu(appState, optionType, chartInstanceIndex);
+            buildChartInstanceOptionsMenu(appState, deps, optionType, chartInstanceIndex);
             break;
         case "axis":
             DOM.switchViewMenu('chartInstanceAxisSettings');
             setViewMenuTitle(`Chart Instance ${chartInstanceIndex + 1} Axis Settings`);
-            buildChartInstanceOptionsMenu(appState, optionType, chartInstanceIndex);
+            buildChartInstanceOptionsMenu(appState, deps, optionType, chartInstanceIndex);
+            break;
+        case "output":
+            DOM.switchViewMenu('viewOutput');
+            setViewMenuTitle(`Output`);
+            buildChartInstanceOptionsMenu(appState, deps, optionType, chartInstanceIndex);
             break;
     }
 }
 
-function buildChartInstanceOptionsMenu(appState, optionType, chartInstanceIndex){
+function buildChartInstanceOptionsMenu(appState, deps, optionType, chartInstanceIndex){
     let menuWrapper = document.createElement('div');
     menuWrapper.classList.add('chartInstanceOptionsMenuWrapper');
 
@@ -1380,108 +1469,249 @@ function buildChartInstanceOptionsMenu(appState, optionType, chartInstanceIndex)
 
             break;
         case "axis":
-            document.getElementById('chartInstanceAxisSettingsMenu').innerHTML = '';
-            document.getElementById('chartInstanceAxisSettingsMenu').appendChild(menuWrapper);
-
-            ['X', 'Y'].forEach(axisKey => {
-                // Header row: arrow + label + select, all inline
-                let axisRow = document.createElement('div');
-                axisRow.style.display = 'flex';
-                axisRow.style.alignItems = 'center';
-                axisRow.style.gap = '8px';
-                axisRow.style.padding = '6px 4px';
-                axisRow.style.cursor = 'pointer';
-                axisRow.style.userSelect = 'none';
-
-                let arrow = document.createElement('span');
-                arrow.textContent = '▶';
-                arrow.style.fontSize = '10px';
-                arrow.style.transition = 'transform 0.2s';
-                arrow.style.flexShrink = '0';
-
-                let label = document.createElement('label');
-                label.textContent = `${axisKey} Axis`;
-                label.style.minWidth = '50px';
-                label.style.cursor = 'pointer';
-
-                let axisSelect = document.createElement('select');
-                axisSelect.style.flex = '1';
-                ['None', 'Temperature', 'Salinity', 'Pressure', 'Depth'].forEach(opt => {
-                    let option = document.createElement('option');
-                    option.value = opt.toLowerCase();
-                    option.textContent = opt;
-                    axisSelect.appendChild(option);
-                });
-                let currentData = appState.currentView.chartInstances[chartInstanceIndex].axis[axisKey].Data;
-                if (currentData) axisSelect.value = currentData;
-                axisSelect.addEventListener('change', function() {
-                    appState.currentView.chartInstances[chartInstanceIndex].axis[axisKey].Data = axisSelect.value;
-                });
-
-                // Expanded content area (hidden by default)
-                let axisContent = document.createElement('div');
-                axisContent.style.display = 'none';
-                axisContent.style.padding = '6px 16px';
-
-                let placeholder = document.createElement('p');
-                placeholder.textContent = `${axisKey} Axis — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.`;
-                placeholder.style.margin = '0';
-                placeholder.style.fontSize = '0.9em';
-                placeholder.style.color = '#666';
-                axisContent.appendChild(placeholder);
-
-                // Stop select clicks from toggling the row
-                axisSelect.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                });
-
-                // Single toggle listener on the whole row
-                axisRow.addEventListener('click', function() {
-                    const isOpen = axisContent.style.display !== 'none';
-                    axisContent.style.display = isOpen ? 'none' : 'block';
-                    arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
-                });
-
-                axisRow.appendChild(arrow);
-                axisRow.appendChild(label);
-                axisRow.appendChild(axisSelect);
-
-                menuWrapper.appendChild(axisRow);
-                menuWrapper.appendChild(axisContent);
-            });
+            renderAxisChartInstance(appState, menuWrapper, chartInstanceIndex);
+            break;
+        case "output":
+            renderViewOutput(appState, deps);
             break;
     }
 
 
+}
+
+function renderViewOutput(appState, deps) {
+    let {charts, integrations, pathDep} = deps;
+    let dataPath = pathDep.resolveToProperDataPath(__dirname, 'savedData');
+    let specifiedAxis = new Set();
+    let viewDataMap = {};
+
+    // For Each Chart
+    appState.currentView.chartInstances.forEach((chartInstance, index) => {
+        // For Each Axis in Chart
+        chartInstance.axis.forEach((axis, axisIndex) => {
+            // Add Var
+            specifiedAxis.add(axis.Data);
+        });
+        // Add Chart
+        viewDataMap[index] = {};
+        // Add Axis to Chart
+        Array.from(specifiedAxis).forEach(varKey => {
+            viewDataMap[index][varKey.toUpperCase()] = [];
+        });
+        // Reset axis for next chart instance
+        specifiedAxis = new Set();
+
+    });
+
+    console.log(viewDataMap);
+
+    // appState.currentView.vars.forEach((varKey, index) => {
+    //     let filepath = path.join(dataPath, `${varKey}`);
+    //     integrations.callPyFunc("open_ds", [filepath]);
+    //     integrations.callPyFunc("getVariableByDimension", [""]).then(result => {
+    //         console.log(`Data for variable ${varKey}:`, result);
+    //     }).catch(err => console.error('Data load error:', err));
+        
+    // })
+}
+
+function renderAxisChartInstance(appState, menuWrapper, chartInstanceIndex) {
+    document.getElementById('chartInstanceAxisSettingsMenu').innerHTML = '';
+    document.getElementById('chartInstanceAxisSettingsMenu').appendChild(menuWrapper);
+
+    // Add + Button for adding new axis
+    let addAxisButton = document.createElement('button');
+    addAxisButton.classList.add('addAxisButton');
+    addAxisButton.textContent = "Add Axis +";
+    addAxisButton.addEventListener('click', function() {
+        let newAxis = {
+            AxisSide: "X",
+            Data: null
+        };
+        appState.currentView.chartInstances[chartInstanceIndex].axis.push(newAxis);
+        console.log("Added new axis:", newAxis);
+        menuWrapper.innerHTML = '';
+        renderAxisChartInstance(appState, menuWrapper, chartInstanceIndex);
+    });
+    menuWrapper.appendChild(addAxisButton);
+    //
+
+    // Init vars
+    allAxis = appState.currentView.chartInstances[chartInstanceIndex].axis;
+    axisAmount = allAxis.length;
+    //
+
+    // Each Axis
+    allAxis.forEach((axisKey, index) => {
+        // Header row: [arrow + label + select + remove]
+        
+        // row (wrapper)
+        let axisRow = document.createElement('div');
+        axisRow.style.display = 'flex';
+        axisRow.style.alignItems = 'center';
+        axisRow.style.gap = '8px';
+        axisRow.style.padding = '6px 4px';
+        axisRow.style.cursor = 'pointer';
+        axisRow.style.userSelect = 'none';
+
+        // Arrow
+        let arrow = document.createElement('span');
+        arrow.textContent = '▶';
+        arrow.style.fontSize = '10px';
+        arrow.style.transition = 'transform 0.2s';
+        arrow.style.flexShrink = '0';
+
+        // Label
+        let label = document.createElement('label');
+        label.textContent = `Axis ${index + 1}`;
+        label.style.minWidth = '50px';
+        label.style.cursor = 'pointer';
+
+        // Var Dropdown Select
+        let axisSelect = document.createElement('select');
+        //axisSelect.style.flex = '1';
+        axisSelect.style.width = '50%';
+        axisSelect.style.marginLeft = '20px';
+        let varsToUse = appState.currentView.vars;
+        varsToUse.forEach(opt => {
+            let option = document.createElement('option');
+            option.value = opt.toLowerCase();
+            option.textContent = opt;
+            axisSelect.appendChild(option);
+        });
+        let currentData = appState.currentView.chartInstances[chartInstanceIndex].axis[index].Data;
+        if (currentData) {
+            axisSelect.value = currentData.toLowerCase();
+            appState.currentView.chartInstances[chartInstanceIndex].axis[index].Data = currentData.toLowerCase();
+        } else if (axisSelect.options.length > 0) {
+            // No saved value — default to first option and sync state
+            axisSelect.value = axisSelect.options[0].value;
+            appState.currentView.chartInstances[chartInstanceIndex].axis[index].Data = axisSelect.options[0].value;
+        }
+
+        // Axis Side Dropdown
+        let axisSideSelect = document.createElement('select');
+        //axisSideSelect.style.flex = '1';
+        axisSideSelect.style.width = '10%';
+        axisSideSelect.style.marginLeft = '20px';
+        ['X', 'Y'].forEach(opt => {
+            let option = document.createElement('option');
+            option.textContent = opt;
+            axisSideSelect.appendChild(option);
+        });
+        let currentSide = appState.currentView.chartInstances[chartInstanceIndex].axis[index].AxisSide;
+        if (currentSide) axisSideSelect.value = currentSide;
+
+        // Var Dropdown Content
+        let axisContent = document.createElement('div');
+        axisContent.style.display = 'none';
+        axisContent.style.padding = '6px 16px';
+
+        let placeholder = document.createElement('p');
+        placeholder.textContent = `Axis ${index + 1} — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.`;
+        placeholder.style.margin = '0';
+        placeholder.style.fontSize = '0.9em';
+        placeholder.style.color = '#666';
+        axisContent.appendChild(placeholder);
+
+        // Remove Button
+        let removeButton = document.createElement('button');
+        removeButton.classList.add('bannerButton');
+        removeButton.textContent = 'Remove Axis';
+        removeButton.style.marginTop = '6px';
+
+        // Stop select clicks from toggling the row
+        axisSelect.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+        axisSideSelect.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+
+        // Single toggle listener on the whole row
+        axisRow.addEventListener('click', function() {
+            const isOpen = axisContent.style.display !== 'none';
+            axisContent.style.display = isOpen ? 'none' : 'block';
+            arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
+        });
+
+        // Remove button listener
+        removeButton.addEventListener('click', function() {
+            appState.currentView.chartInstances[chartInstanceIndex].axis.splice(index, 1);
+            menuWrapper.innerHTML = '';
+            renderAxisChartInstance(appState, menuWrapper, chartInstanceIndex);
+        });
+
+        // Select listener
+        axisSelect.addEventListener('change', function() {
+            appState.currentView.chartInstances[chartInstanceIndex].axis[index].Data = axisSelect.value;
+            console.log(`axis[${index}].Data set to: ${axisSelect.value}`);
+        });
+        axisSideSelect.addEventListener('change', function() {            
+            appState.currentView.chartInstances[chartInstanceIndex].axis[index].AxisSide = axisSideSelect.value;
+            console.log(`axis[${index}].AxisSide set to: ${axisSideSelect.value}`);
+        });
+        
+        axisRow.appendChild(arrow);
+        axisRow.appendChild(label);
+        axisRow.appendChild(axisSideSelect);
+        axisRow.appendChild(axisSelect);
+        axisRow.appendChild(removeButton);
+
+        menuWrapper.appendChild(axisRow);
+        menuWrapper.appendChild(axisContent);
+    });
 }
 
 function setViewMenuTitle(title){
     document.getElementById('viewMenuTitle').textContent = title;
 }
 
-function constructVieDataViaPreferences(appState, viewPreferences){
+function constructViewDataViaPreferences(appState, viewPreferences){
+    console.log("Constructing view data based on preferences:", viewPreferences);
+    let resultingData = [];
+    const markerEntries = Object.entries(appState.markers || {});
 
     switch (viewPreferences) {
-        case "fromMapSelection":
-            // Construct view data based on currently selected items on the map
+        case "fromSelection":
+            // Construct view data based on the current file selection
+            resultingData = Array.from(appState.selectedFiles || []);
+            console.log("Added selected files to view data:", resultingData);
             break;
         case "allVisible":
             // Construct view data based on all visible items on the map
+            markerEntries.forEach(([fileName, marker]) => {
+                if (marker.isFiltered === false) {
+                    resultingData.push(fileName);
+                    console.log("Added visible marker to view data:", fileName, marker);
+                }
+            });
             break;
         case "allHidden":
             // Construct view data based on all hidden items on the map
+            markerEntries.forEach(([fileName, marker]) => {
+                if (marker.isFiltered === true) {
+                    resultingData.push(fileName);
+                    console.log("Added hidden marker to view data:", fileName, marker);
+                }
+            });
             break;
         case "allWithNotes":
             // Construct view data based on all items with notes on the map
             break;
         case "all":
             // Construct view data based on all items on the map
+            resultingData = markerEntries.map(([fileName]) => fileName);
             break;
         case "custom":
             // Construct view data based on a custom selection of items on the map
             break;
     }
+
+    console.log("Resulting view data constructed from preferences:", resultingData);
+    return resultingData;
 }
+
 
 
 module.exports = {
@@ -1520,6 +1750,6 @@ module.exports = {
     dom_setVisibilityOfConfigColumn,
     switchViewMenu,
     setViewMenuTitle,
-    constructVieDataViaPreferences
+    constructViewDataViaPreferences
 
 };

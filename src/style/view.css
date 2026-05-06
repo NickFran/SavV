@@ -123,6 +123,26 @@
 	flex-direction: column;
 	padding: 20px;
 }
+.viewChartInstanceWrapper{
+	display: flex;
+	flex-direction: column;
+	overflow-y: scroll;
+	padding-right: 2vw;
+	max-height: 85%;
+}
+.viewChartInstanceWrapper::-webkit-scrollbar {
+	width: 6px;
+}
+.viewChartInstanceWrapper::-webkit-scrollbar-track {
+	background: transparent;
+}
+.viewChartInstanceWrapper::-webkit-scrollbar-thumb {
+	background-color: rgba(61, 112, 159, 0.171);
+	border-radius: 999px;
+}
+.viewChartInstanceWrapper::-webkit-scrollbar-thumb:hover {
+	background-color: rgba(61, 112, 159, 0.438);
+}
 
 .ViewChartInstance {
 	display: flex;
@@ -324,4 +344,82 @@
 	margin: 0 0 0 4px;
 	accent-color: #459fff;
 	vertical-align: left;
+}
+
+#viewSidebar {
+	position: relative;
+}
+.generateViewButton {
+	position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 16px; 
+
+	padding: 6px 10px;
+	border-radius: 4px;
+	background-color: var(--BColor);
+	color: #ffffff;
+	font-size: 1.0rem;
+	font-weight: 400;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	cursor: pointer;
+	transition: all 0.1s ease-in-out;
+}
+
+
+
+.viewOutputWrapper{
+	margin-left: 20px;
+	border-left: #000000 1px dashed;
+	padding-top: 40px;
+}
+
+.viewOutput{
+	position: relative;
+
+		padding: 6px 12px;
+	border-radius: 10px;
+	background-color: #ffffff;
+	border: var(--highlightOutput) 2px solid;
+	color: var(--highlightOutput);
+	font-size: 0.75rem;
+	font-weight: 900;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	transition: all 0.1s ease-in-out;
+}
+.viewOutput:hover{
+	background-color: var(--highlightOutput_hover);
+	color: #ffffff;
+}
+.viewOutput:active{
+	background-color: var(--highlightOutput_active);
+	color: #ffffff;
+}
+
+
+.addAxisButton {
+	padding: 6px 12px;
+	border-radius: 10px;
+	background-color: #ffffff;
+	border: var(--BColor) 1px solid;
+	color: var(--BColor);
+	font-size: 0.75rem;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	cursor: pointer;
+	transition: all 0.1s ease-in-out;
+	width: 30%;
+	margin-left: auto;
+	margin-right: auto;
+}
+.addAxisButton:hover{
+	background-color: var(--BColorHover);
+	color: #ffffff;
+}
+.addAxisButton:active{
+	background-color: var(--BColorActive);
+	color: #ffffff;
 }

@@ -9,6 +9,10 @@
     --BColorHover: rgb(12, 46, 97);
     --BColorActive: #81dbff;
 
+    --highlightOutput: #14af00;
+    --highlightOutput_hover: #0a5800;
+    --highlightOutput_active: #18cc00;
+
 
 
   --buttonAnim: all 0.1s ease-in-out;

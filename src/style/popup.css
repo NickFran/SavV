@@ -46,6 +46,8 @@
 }
 .popup-content-wrapper_simple{
     display:block;
+    overflow-y: scroll;
+    max-height: 80%;
 }
 .popup-content {
     padding: 10px 10px;

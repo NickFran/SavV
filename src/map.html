@@ -72,8 +72,11 @@
                     name: null,
                     type: null,
                     dataSelection: null,
-                    chartInstances: []
-            }
+                    chartInstances: [],
+                    vars: null
+            },
+            viewVars: new Set(),
+            isViewGenerated: false
         };
 
         if(config.get('debug', 'enableDebug')){
@@ -88,7 +91,8 @@
                 fileHandle,
                 integrations,
                 basicFunctions,
-                config
+                config,
+                charts
                 },
             "FileHandle":
                 {
@@ -161,7 +165,7 @@
         <div class="wrapper">
             <h2>Platforms</h2>
             <details id="GliderDropDown">
-                <summary>Gliders</summary>
+                <summary>Platforms</summary>
                     <ul class="GliderList" id="GliderList">
                     </ul>
             </details>
@@ -283,7 +287,7 @@
         <div class="viewPage" id='viewPage'>        
             <div class="Vcard">bottomLeft</div>
             <div class="Vcard">bottomRight</div>
-            <div class="Vcard">
+            <div class="Vcard" id="viewSidebar">
                 <div class="viewConfigWrapper" id="viewConfigWrapper">
                     <div class="viewTitleWrapper">
                         <h4>View - <span id="viewName">TestView</span></h4>
@@ -305,12 +309,11 @@
                                 <div class="viewConfigOption">Axis</div>
                             </div>
                         </div>
-                        
                 </div>
             </div>
             <div class="Vcard">
                 <div class="columnToggler" id="columnToggler">&lt;</div>
-                <h4 id="viewMenuTitle">New View</h4>
+                <h4 id="viewMenuTitle">Create New View</h4>
                 <form id="createNewViewForm">
                     <div class="inputFormWrapper">
                         <h5>Name: </h5>
@@ -320,18 +323,18 @@
                         <h5>Type: </h5>
                         <select name="newViewGraphType" id="newViewGraphType" required>
                         <option value="line">Line</option>
-                        <option value="bar">Bar</option>
+                        <option value="bar" disabled>Bar</option>
                         </select>
                     </div>
                     <div class="inputFormWrapper">
                         <h5>Data: </h5>
                         <select name="newViewGraphData" id="newViewGraphData" required>
-                        <option value="fromMapSelection">Currently Selected</option>
+                        <option value="fromSelection">Currently Selected</option>
                         <option value="allVisible">All Visible On Map</option>
                         <option value="allHidden">All Hidden On Map</option>
-                        <option value="allWithNotes">All With Notes</option>
-                        <option value="all">All (!)</option>
-                        <option value="custom">Custom Selection</option>
+                        <option value="allWithNotes" disabled>All With Notes</option>
+                        <option value="all" disabled>All (!)</option>
+                        <option value="custom" disabled>Custom Selection</option>
                         </select>
                     </div>
                     <button type="button" class="createViewButton" id="createViewButton">Create View</button>
@@ -339,6 +342,7 @@
                 <div class="chartInstanceSettingsMenu" id="chartInstanceSettingsMenu">123</div>
                 <div class="chartInstanceGeneralSettingsMenu" id="chartInstanceGeneralSettingsMenu"></div>
                 <div class="chartInstanceAxisSettingsMenu" id="chartInstanceAxisSettingsMenu"></div>
+                <div class="viewOutputMenu" id="viewOutputMenu"></div>
             </div>
         </div>
     </div>
@@ -347,6 +351,8 @@
 
 <script>
     DOM.switchViewMenu('createNewView');
+    DOM.dom_setVisibilityOfConfigColumn(appState, false); 
+    document.getElementById('NewViewButton').style.display = 'none';
     //document.getElementById('createNewViewForm').style.display = 'none';
     // document.getElementById('chartInstanceSettingsMenu').style.display = 'none';
     // document.getElementById('chartInstanceGeneralSettingsMenu').style.display = 'none';
@@ -495,6 +501,8 @@
     window.addEventListener('load', function() {
         setTimeout(DOM.hideLoadingScreen, 500); // Minimum loading time
     });
+
+
 
     // init timeline display
     const rangeTable = document.querySelector('.rangeTable');
@@ -851,20 +859,118 @@ userInteractions.userint_focusOnMarker(appState);
     })
 
     document.getElementById('createViewButton').addEventListener('click', function() {
+        let targetViewData = DOM.constructViewDataViaPreferences(appState, document.getElementById('newViewGraphData').value);
+        appState.viewVars = new Set();
+        appState.isViewGenerated = false;
+        appState.currentView = {
+                    name: null,
+                    type: null,
+                    dataSelection: null,
+                    chartInstances: [],
+                    vars: null
+        };
+
+        if (targetViewData.length === 0) {
+            console.log("No data selected for new view");
+            //popup.popupTemplates.Spawn_noFilesToPlot().open();
+            logging.log(params={
+                callerInfo:basicFunctions.getCallerInfo(),
+                state:appState,
+                dep:ModuleDependencies["logging"],
+                msgLabel: `No Files To Plot`,
+                msg: `You attempted to create a new view of your files but no files were included based on your preference, 
+                This most likely means that you forgot to select your files or forget to filter them (depending on your data preference). 
+                Please try handling your files again before creating a new view with them.`,
+                seriousness: 'warning',
+                code: '0001',
+                class:'INPUT',
+                ignoreConsole: false,
+                ignorePopup: false,
+                ignoreNotification: false,
+                ignoreLogging: false
+            });
+            return;
+        }
+        
+        let varsPerFile = [];
+        let areFileVarsUnbalanced = false;
+        targetViewData.forEach((fileName) => {
+            console.log("including File in new view:", fileName);
+            let viewFilePath = path.join(pathDep.savedDataPath, fileName);
+            let doesFileExist = fileHandle.doesFileAlreadyExist(viewFilePath);
+
+            if (!doesFileExist) {
+                console.error("File not found:", fileName);
+                return;
+            } else {
+                let allfoundVars = fileHandle.getEntryKeyInSimpleData(fileName, 'vars');
+                console.log("Vars per file:", allfoundVars);
+                varsPerFile.push(new Set(allfoundVars));
+            }
+        });
+
+        
+        // Intersection: collect all sets first, THEN filter
+        appState.viewVars = new Set();
+        if (varsPerFile.length > 0) {
+            varsPerFile[0].forEach(v => {
+                if (varsPerFile.every(s => s.has(v))) {
+                    appState.viewVars.add(v);
+                } else {
+                    areFileVarsUnbalanced = true;
+                }
+            });
+            // Also check for vars in other files not present in file[0]
+            if (!areFileVarsUnbalanced) {
+                for (let i = 1; i < varsPerFile.length; i++) {
+                    varsPerFile[i].forEach(v => {
+                        if (!varsPerFile[0].has(v)) areFileVarsUnbalanced = true;
+                    });
+                }
+            }
+        }
+
+        if (areFileVarsUnbalanced) {
+            logging.log(params={
+                callerInfo:basicFunctions.getCallerInfo(),
+                state:appState,
+                dep:ModuleDependencies["logging"],
+                msgLabel: `Vars Unbalanced`,
+                msg: `An attempt was made to create a view with files that do not share the same amount of variables (some have more vars than others).<br><br>
+                To prevent errors, The view has defaulted to only including the variables that are found in all the files.<br><br>
+                
+                The only variables included in the new view are: ${Array.from(appState.viewVars).join("<br> ")}<br><br>`,
+                seriousness: 'info',
+                code: '0001',
+                class:'INPUT',
+                ignoreConsole: false,
+                ignorePopup: false,
+                ignoreNotification: false,
+                ignoreLogging: false
+            });
+        }
+        
+        console.log("View vars (intersection):", appState.viewVars);
+
+        
+        
+
+        
         DOM.dom_initNewView(appState, {
             name: document.getElementById('newViewName').value,
             type: document.getElementById('newViewGraphType').value,
-            dataSelection: document.getElementById('newViewGraphData').value
+            dataSelection: document.getElementById('newViewGraphData').value,
+            vars: Array.from(appState.viewVars),
+            data: targetViewData
         });
-
-        DOM.constructVieDataViaPreferences(appState, document.getElementById('newViewGraphData').value);
 
         console.log("New View Created:", appState.currentView);
         console.log(appState);
 
-        DOM.renderView(appState);
+        DOM.renderView(appState, ModuleDependencies["DOM"]);
 
         DOM.dom_setVisibilityOfConfigColumn(appState, true); 
+        
     });
 
     document.getElementById('viewConfigAddSubOption').addEventListener('click', function() {

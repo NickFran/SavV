@@ -250,4 +250,8 @@ function initTimeline(state, deps, DOM_Deps) {
     return chart;
 }
 
+function buildChartInstance() {
+    
+}
+
 module.exports = { initTimeline };
